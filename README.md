@@ -1,14 +1,16 @@
 # RoboSight
 
-RoboSight 是用於驗證 iOS 與 ROS 2 通訊的最小 App。  
-目前第一階段目標是透過 `swift-ros2` 與 Zenoh 連線到 ROS 2，並發布連線狀態訊息。
+RoboSight 是用於驗證 iOS 裝置作為 ROS 2 外部感測器的 App。
+目前已完成 Zenoh 連線與相機影像串流。
 
 ## 目前功能
 
 - iOS App 連線到 ROS 2 Zenoh router
-- 建立 ROS 2 publisher：`/robosight/status`
-- 發送 `std_msgs/msg/String` 狀態訊息，內容為 topic 名稱與目前時間
-- 支援 iOS Simulator 與實體 iPhone / iPad 測試
+  - 發送 `/robosight/status`
+- 相機功能
+  - 發送 `/robosight/camera/image_raw/compressed`
+  - 發送 `/robosight/camera/camera_info`
+  - 相機影像固定以直式 portrait 輸出
 
 ## App 設定
 
@@ -41,6 +43,7 @@ DEBIAN_FRONTEND=noninteractive apt-get install -y ros-jazzy-rmw-zenoh-cpp
 ### 啟動 Zenoh router：
 ```bash
 source /opt/ros/jazzy/setup.bash
+export RMW_IMPLEMENTATION=rmw_zenoh_cpp
 export ROS_DOMAIN_ID=0
 ros2 run rmw_zenoh_cpp rmw_zenohd
 ```
@@ -53,6 +56,14 @@ export ROS_DOMAIN_ID=0
 
 ros2 topic info /robosight/status --verbose
 ros2 topic echo /robosight/status std_msgs/msg/String
+ros2 topic hz /robosight/camera/image_raw/compressed
+ros2 topic hz /robosight/camera/camera_info
 ```
 
-
+### Rviz2：
+```bash
+source /opt/ros/jazzy/setup.bash
+export RMW_IMPLEMENTATION=rmw_zenoh_cpp
+export ROS_DOMAIN_ID=0
+rviz2
+```

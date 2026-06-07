@@ -1,4 +1,5 @@
 import ARKit
+import CoreVideo
 import Foundation
 import RealityKit
 import simd
@@ -25,11 +26,10 @@ extension ARKitSensorStatus {
     )
 }
 
-struct ARKitSensorFrame {
+struct ARKitSensorFrame: Sendable {
     let arTimestamp: TimeInterval
     let unixTimestamp: TimeInterval
-    let rgbImage: ARFrameImageData
-    let depthImage: ARFrameImageData?
+    let colorImage: ARFrameCompressedImageData
     let cameraMatrix: [Double]
     let cameraTransform: simd_float4x4
 }
@@ -39,8 +39,8 @@ final class ARKitSensorView: ARView, ARSessionDelegate {
     var onFrameUpdate: ((ARKitSensorFrame) -> Void)?
 
     private let targetPublishInterval: TimeInterval = 1.0 / 10.0
-    private let rgbScale: CGFloat = 0.1
-    private let depthScale: CGFloat = 0.75
+    private let colorImageScale: CGFloat = 0.5
+    private let jpegCompressionQuality: CGFloat = 0.75
 
     private var sessionTimeOffset: TimeInterval?
     private var lastPublishTime: TimeInterval = 0
@@ -108,21 +108,25 @@ final class ARKitSensorView: ARView, ARSessionDelegate {
 
         guard let sessionTimeOffset else { return }
 
-        let rgbImage = ARFrameExtractor.extractDownsampledRGB8Data(
+        guard let colorImage = ARFrameExtractor.extractJPEGImageData(
             from: frame.capturedImage,
-            scale: rgbScale
-        )
+            scale: colorImageScale,
+            compressionQuality: jpegCompressionQuality
+        ) else { return }
 
-        let depthImage = frame.sceneDepth.map {
-            ARFrameExtractor.extractDownscaledDepthData(from: $0, scale: depthScale)
+        let depthResolution = frame.sceneDepth.map { sceneDepth in
+            let depthMap = sceneDepth.depthMap
+            return CGSize(
+                width: CVPixelBufferGetWidth(depthMap),
+                height: CVPixelBufferGetHeight(depthMap)
+            )
         }
 
         let sensorFrame = ARKitSensorFrame(
             arTimestamp: arTimestamp,
             unixTimestamp: sessionTimeOffset + arTimestamp,
-            rgbImage: rgbImage,
-            depthImage: depthImage,
-            cameraMatrix: ARFrameExtractor.scaledCameraMatrix(from: frame, scale: rgbScale),
+            colorImage: colorImage,
+            cameraMatrix: ARFrameExtractor.scaledPortraitCameraMatrix(from: frame, scale: colorImageScale),
             cameraTransform: frame.camera.transform
         )
 
@@ -130,9 +134,9 @@ final class ARKitSensorView: ARView, ARSessionDelegate {
         updateFPS()
 
         publishStatus(
-            hasSceneDepth: depthImage != nil,
-            rgbResolution: CGSize(width: rgbImage.width, height: rgbImage.height),
-            depthResolution: depthImage.map { CGSize(width: $0.width, height: $0.height) }
+            hasSceneDepth: depthResolution != nil,
+            rgbResolution: CGSize(width: colorImage.width, height: colorImage.height),
+            depthResolution: depthResolution
         )
 
         lastPublishTime = arTimestamp

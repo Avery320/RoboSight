@@ -19,7 +19,10 @@ struct ContentView: View {
                 Label("Settings", systemImage: "gearshape")
             }
 
-            CameraView(viewModel: cameraViewModel)
+            CameraView(
+                cameraViewModel: cameraViewModel,
+                connectionViewModel: connectionViewModel
+            )
                 .tabItem {
                     Label("Camera", systemImage: "camera.viewfinder")
                 }
@@ -138,24 +141,30 @@ private struct SettingsView: View {
 }
 
 private struct CameraView: View {
-    @ObservedObject var viewModel: CameraSensorViewModel
+    @ObservedObject var cameraViewModel: CameraSensorViewModel
+    @ObservedObject var connectionViewModel: ConnectionViewModel
 
     var body: some View {
         NavigationStack {
             Group {
-                if viewModel.isCameraEnabled {
+                if cameraViewModel.isCameraEnabled {
                     ZStack(alignment: .bottom) {
                         ARKitPreviewView(
-                            isLiDAREnabled: viewModel.isLiDAREnabled,
+                            isLiDAREnabled: cameraViewModel.isLiDAREnabled,
                             onStatusUpdate: { status in
-                                viewModel.updateStatus(status)
+                                cameraViewModel.updateStatus(status)
+                            },
+                            onFrameUpdate: { frame in
+                                Task {
+                                    await connectionViewModel.publishCameraFrame(frame)
+                                }
                             }
                         )
                         .ignoresSafeArea(edges: .top)
 
                         CameraStatusPanel(
-                            status: viewModel.status,
-                            isLiDAREnabled: viewModel.isLiDAREnabled
+                            status: cameraViewModel.status,
+                            isLiDAREnabled: cameraViewModel.isLiDAREnabled
                         )
                         .padding()
                     }

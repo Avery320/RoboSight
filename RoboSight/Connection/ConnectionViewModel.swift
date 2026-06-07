@@ -11,9 +11,10 @@ final class ConnectionViewModel: ObservableObject {
 
     private let transport: any RobotTransport
     private var heartbeatTask: Task<Void, Never>?
+    private var isPublishingCameraFrame = false
 
     init(
-        routerHost: String = "127.0.0.1",
+        routerHost: String = "172.20.10.5",
         routerPort: String = "7447",
         domainId: String = "0",
         transport: any RobotTransport = SwiftROS2ZenohTransport()
@@ -86,9 +87,27 @@ final class ConnectionViewModel: ObservableObject {
 
         state = .disconnecting
         stopHeartbeat()
+        isPublishingCameraFrame = false
         await transport.disconnect()
         state = .disconnected
         lastStatusMessage = "Disconnected."
+    }
+
+    func publishCameraFrame(_ frame: ARKitSensorFrame) async {
+        guard state.isConnected, !isPublishingCameraFrame else { return }
+
+        isPublishingCameraFrame = true
+        defer {
+            isPublishingCameraFrame = false
+        }
+
+        do {
+            try await transport.publishCameraFrame(frame)
+        } catch {
+            guard state.isConnected else { return }
+            stopHeartbeat()
+            state = .failed(error.localizedDescription)
+        }
     }
 
     private func startHeartbeat() {
