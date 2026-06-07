@@ -1,38 +1,61 @@
 import SwiftUI
 
 struct ContentView: View {
-    @StateObject private var viewModel: ConnectionViewModel
+    @StateObject private var connectionViewModel: ConnectionViewModel
+    @StateObject private var cameraViewModel = CameraSensorViewModel()
 
     @MainActor
     init() {
-        _viewModel = StateObject(wrappedValue: ConnectionViewModel())
+        _connectionViewModel = StateObject(wrappedValue: ConnectionViewModel())
     }
+
+    var body: some View {
+        TabView {
+            SettingsView(
+                connectionViewModel: connectionViewModel,
+                cameraViewModel: cameraViewModel
+            )
+            .tabItem {
+                Label("Settings", systemImage: "gearshape")
+            }
+
+            CameraView(viewModel: cameraViewModel)
+                .tabItem {
+                    Label("Camera", systemImage: "camera.viewfinder")
+                }
+        }
+    }
+}
+
+private struct SettingsView: View {
+    @ObservedObject var connectionViewModel: ConnectionViewModel
+    @ObservedObject var cameraViewModel: CameraSensorViewModel
 
     var body: some View {
         NavigationStack {
             Form {
                 Section {
                     LabeledContent("Router Address") {
-                        TextField("Router Address", text: $viewModel.routerHost)
+                        TextField("Router Address", text: $connectionViewModel.routerHost)
                             .multilineTextAlignment(.trailing)
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
                     }
 
                     LabeledContent("Router Port") {
-                        TextField("Router Port", text: $viewModel.routerPort)
+                        TextField("Router Port", text: $connectionViewModel.routerPort)
                             .multilineTextAlignment(.trailing)
                             .keyboardType(.numberPad)
                     }
 
                     LabeledContent("Domain ID") {
-                        TextField("Domain ID", text: $viewModel.domainId)
+                        TextField("Domain ID", text: $connectionViewModel.domainId)
                             .multilineTextAlignment(.trailing)
                             .keyboardType(.numberPad)
                     }
 
                     LabeledContent("Full Address") {
-                        Text(viewModel.fullRouterAddress)
+                        Text(connectionViewModel.fullRouterAddress)
                             .foregroundStyle(.secondary)
                             .textSelection(.enabled)
                     }
@@ -44,26 +67,24 @@ struct ContentView: View {
 
                 Section {
                     LabeledContent("Topic") {
-                        Text(viewModel.statusTopic)
+                        Text(connectionViewModel.statusTopic)
                             .foregroundStyle(.secondary)
                             .textSelection(.enabled)
                     }
 
-                    LabeledContent("Status") {
-                        Text(viewModel.state.title)
-                            .foregroundStyle(.secondary)
+                    Toggle("Connection", isOn: connectionToggleBinding)
+                        .disabled(connectionViewModel.state.isBusy)
+
+                    if connectionViewModel.state.isBusy {
+                        ProgressView("\(connectionViewModel.state.title)...")
                     }
 
-                    if viewModel.state.isBusy {
-                        ProgressView("\(viewModel.state.title)...")
-                    }
-
-                    if let detail = viewModel.state.detail {
+                    if let detail = connectionViewModel.state.detail {
                         Text(detail)
                             .foregroundStyle(.red)
                     }
 
-                    if let message = viewModel.lastStatusMessage {
+                    if let message = connectionViewModel.lastStatusMessage {
                         Text(message)
                             .foregroundStyle(.secondary)
                     }
@@ -72,23 +93,129 @@ struct ContentView: View {
                 }
 
                 Section {
-                    Button("Connect") {
-                        Task {
-                            await viewModel.connect()
-                        }
-                    }
-                    .disabled(!viewModel.canConnect)
+                    Toggle("Camera", isOn: cameraToggleBinding)
 
-                    Button("Disconnect", role: .destructive) {
-                        Task {
-                            await viewModel.disconnect()
-                        }
-                    }
-                    .disabled(!viewModel.canDisconnect)
+                    Toggle("LiDAR", isOn: lidarToggleBinding)
+                        .disabled(!cameraViewModel.canEnableLiDAR && !cameraViewModel.isLiDAREnabled)
+                } header: {
+                    Text("Camera / LiDAR")
+                } footer: {
+                    Text("Enable Camera before switching to the Camera tab. LiDAR is available only on supported devices and runs as ARKit scene depth.")
                 }
             }
             .navigationTitle("RoboSight")
         }
+    }
+
+    private var connectionToggleBinding: Binding<Bool> {
+        Binding(
+            get: { connectionViewModel.isConnectionEnabled },
+            set: { isEnabled in
+                Task {
+                    await connectionViewModel.setConnectionEnabled(isEnabled)
+                }
+            }
+        )
+    }
+
+    private var cameraToggleBinding: Binding<Bool> {
+        Binding(
+            get: { cameraViewModel.isCameraEnabled },
+            set: { isEnabled in
+                cameraViewModel.setCameraEnabled(isEnabled)
+            }
+        )
+    }
+
+    private var lidarToggleBinding: Binding<Bool> {
+        Binding(
+            get: { cameraViewModel.isLiDAREnabled },
+            set: { isEnabled in
+                cameraViewModel.setLiDAREnabled(isEnabled)
+            }
+        )
+    }
+}
+
+private struct CameraView: View {
+    @ObservedObject var viewModel: CameraSensorViewModel
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if viewModel.isCameraEnabled {
+                    ZStack(alignment: .bottom) {
+                        ARKitPreviewView(
+                            isLiDAREnabled: viewModel.isLiDAREnabled,
+                            onStatusUpdate: { status in
+                                viewModel.updateStatus(status)
+                            }
+                        )
+                        .ignoresSafeArea(edges: .top)
+
+                        CameraStatusPanel(
+                            status: viewModel.status,
+                            isLiDAREnabled: viewModel.isLiDAREnabled
+                        )
+                        .padding()
+                    }
+                } else {
+                    VStack(spacing: 12) {
+                        Image(systemName: "camera.slash")
+                            .font(.largeTitle)
+                            .foregroundStyle(.secondary)
+                        Text("Camera Stopped")
+                            .font(.headline)
+                        Text("Enable Camera from Settings to show the ARKit preview.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding()
+                }
+            }
+            .navigationTitle("Camera")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+}
+
+private struct CameraStatusPanel: View {
+    let status: ARKitSensorStatus
+    let isLiDAREnabled: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            LabeledContent("RGB") {
+                Text(resolutionText(status.rgbResolution))
+            }
+
+            LabeledContent("LiDAR") {
+                Text(lidarStatusText)
+            }
+
+            LabeledContent("Depth") {
+                Text(isLiDAREnabled ? resolutionText(status.depthResolution) : "-")
+            }
+
+            LabeledContent("FPS") {
+                Text(status.framesPerSecond.formatted(.number.precision(.fractionLength(1))))
+            }
+        }
+        .font(.footnote)
+        .padding()
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+    }
+
+    private func resolutionText(_ resolution: CGSize?) -> String {
+        guard let resolution else { return "-" }
+        return "\(Int(resolution.width)) x \(Int(resolution.height))"
+    }
+
+    private var lidarStatusText: String {
+        guard isLiDAREnabled else { return "Disabled" }
+        guard status.isSceneDepthSupported else { return "Unsupported" }
+        return status.hasSceneDepth ? "Receiving" : "Waiting"
     }
 }
 

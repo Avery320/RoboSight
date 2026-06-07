@@ -4,6 +4,9 @@
 
 .DS_Store
 
+# Local analysis/cloned reference repositories
+temp/
+
 ## User settings
 xcuserdata/
 

@@ -43,6 +43,23 @@ final class ConnectionViewModel: ObservableObject {
         state.isConnected
     }
 
+    var isConnectionEnabled: Bool {
+        switch state {
+        case .connecting, .connected:
+            true
+        case .disconnected, .disconnecting, .failed:
+            false
+        }
+    }
+
+    func setConnectionEnabled(_ isEnabled: Bool) async {
+        if isEnabled {
+            await connect()
+        } else {
+            await disconnect()
+        }
+    }
+
     func connect() async {
         guard canConnect else { return }
 

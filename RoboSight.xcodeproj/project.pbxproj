@@ -12,6 +12,10 @@
 		2A8F1DA62C0B000100000001 /* RobotTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F1DA52C0B000100000001 /* RobotTransport.swift */; };
 		2A8F1DAA2C0B000100000001 /* ConnectionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F1DA92C0B000100000001 /* ConnectionViewModel.swift */; };
 		2A8F1DB22C0B000100000001 /* SwiftROS2ZenohTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F1DB12C0B000100000001 /* SwiftROS2ZenohTransport.swift */; };
+		2A8F1DCA2C0B000200000001 /* CameraSensorViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F1DC92C0B000200000001 /* CameraSensorViewModel.swift */; };
+		2A8F1DC42C0B000200000001 /* ARKitPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F1DC32C0B000200000001 /* ARKitPreviewView.swift */; };
+		2A8F1DC62C0B000200000001 /* ARKitSensorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F1DC52C0B000200000001 /* ARKitSensorView.swift */; };
+		2A8F1DC82C0B000200000001 /* ARFrameExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F1DC72C0B000200000001 /* ARFrameExtractor.swift */; };
 		2A8F1D8C2C0B000100000001 /* RoboSightApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F1D8B2C0B000100000001 /* RoboSightApp.swift */; };
 		2A8F1D8E2C0B000100000001 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F1D8D2C0B000100000001 /* ContentView.swift */; };
 		2A8F1D902C0B000100000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2A8F1D8F2C0B000100000001 /* Assets.xcassets */; };
@@ -26,6 +30,10 @@
 		2A8F1DA52C0B000100000001 /* RobotTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RobotTransport.swift; sourceTree = "<group>"; };
 		2A8F1DA92C0B000100000001 /* ConnectionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionViewModel.swift; sourceTree = "<group>"; };
 		2A8F1DB12C0B000100000001 /* SwiftROS2ZenohTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftROS2ZenohTransport.swift; sourceTree = "<group>"; };
+		2A8F1DC92C0B000200000001 /* CameraSensorViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraSensorViewModel.swift; sourceTree = "<group>"; };
+		2A8F1DC32C0B000200000001 /* ARKitPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARKitPreviewView.swift; sourceTree = "<group>"; };
+		2A8F1DC52C0B000200000001 /* ARKitSensorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARKitSensorView.swift; sourceTree = "<group>"; };
+		2A8F1DC72C0B000200000001 /* ARFrameExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARFrameExtractor.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -62,6 +70,7 @@
 				2A8F1D8B2C0B000100000001 /* RoboSightApp.swift */,
 				2A8F1D8D2C0B000100000001 /* ContentView.swift */,
 				2A8F1DA12C0B000100000001 /* Connection */,
+				2A8F1DC02C0B000200000001 /* Sensors */,
 				2A8F1D8F2C0B000100000001 /* Assets.xcassets */,
 			);
 			path = RoboSight;
@@ -76,6 +85,25 @@
 				2A8F1DA92C0B000100000001 /* ConnectionViewModel.swift */,
 			);
 			path = Connection;
+			sourceTree = "<group>";
+		};
+		2A8F1DC02C0B000200000001 /* Sensors */ = {
+			isa = PBXGroup;
+			children = (
+				2A8F1DC92C0B000200000001 /* CameraSensorViewModel.swift */,
+				2A8F1DC12C0B000200000001 /* ARKit */,
+			);
+			path = Sensors;
+			sourceTree = "<group>";
+		};
+		2A8F1DC12C0B000200000001 /* ARKit */ = {
+			isa = PBXGroup;
+			children = (
+				2A8F1DC32C0B000200000001 /* ARKitPreviewView.swift */,
+				2A8F1DC52C0B000200000001 /* ARKitSensorView.swift */,
+				2A8F1DC72C0B000200000001 /* ARFrameExtractor.swift */,
+			);
+			path = ARKit;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -160,6 +188,10 @@
 				2A8F1DA62C0B000100000001 /* RobotTransport.swift in Sources */,
 				2A8F1DB22C0B000100000001 /* SwiftROS2ZenohTransport.swift in Sources */,
 				2A8F1DAA2C0B000100000001 /* ConnectionViewModel.swift in Sources */,
+				2A8F1DC42C0B000200000001 /* ARKitPreviewView.swift in Sources */,
+				2A8F1DC62C0B000200000001 /* ARKitSensorView.swift in Sources */,
+				2A8F1DC82C0B000200000001 /* ARFrameExtractor.swift in Sources */,
+				2A8F1DCA2C0B000200000001 /* CameraSensorViewModel.swift in Sources */,
 				2A8F1D8C2C0B000100000001 /* RoboSightApp.swift in Sources */,
 				2A8F1D8E2C0B000100000001 /* ContentView.swift in Sources */,
 			);
@@ -300,6 +332,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = RoboSight;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "RoboSight connects to ROS 2 over the local network.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "RoboSight uses the device camera and LiDAR through ARKit for sensor streaming.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -335,6 +368,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = RoboSight;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "RoboSight connects to ROS 2 over the local network.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "RoboSight uses the device camera and LiDAR through ARKit for sensor streaming.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
