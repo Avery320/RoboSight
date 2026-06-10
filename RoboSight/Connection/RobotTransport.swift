@@ -1,12 +1,23 @@
 import Foundation
 
+/// App 功能與 ROS 2 通訊之間的傳輸層邊界。
+///
+/// 功能層應傳入穩定的 RoboSight 資料模型，而不是 ARKit 影格型別。
 protocol RobotTransport: Sendable {
+    /// 使用 Zenoh locator 與 ROS domain ID 開啟 ROS 2 傳輸層。
     func connect(routerAddress: String, domainId: Int) async throws
+
+    /// 關閉發布器與傳輸層 context。
     func disconnect() async
+
+    /// 發送輕量 status heartbeat。
     func publishStatus(_ message: String) async throws
-    func publishCameraFrame(_ frame: ARKitSensorFrame) async throws
+
+    /// 發送一筆相機影像資料內容與對應 camera info metadata。
+    func publishCameraImage(_ frame: CameraImageFrame) async throws
 }
 
+/// 傳輸層級的驗證與執行時錯誤。
 enum RobotTransportError: LocalizedError {
     case invalidRouterAddress
     case invalidRouterPort
@@ -14,6 +25,7 @@ enum RobotTransportError: LocalizedError {
     case invalidCameraFrame
     case notConnected
 
+    /// 顯示在 Settings UI 的使用者可讀錯誤文字。
     var errorDescription: String? {
         switch self {
         case .invalidRouterAddress:

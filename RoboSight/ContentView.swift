@@ -1,9 +1,11 @@
 import SwiftUI
 
+/// SwiftUI 根畫面，包含 Settings 與 Camera 兩個頁籤。
 struct ContentView: View {
     @StateObject private var connectionViewModel: ConnectionViewModel
     @StateObject private var cameraViewModel = CameraSensorViewModel()
 
+    /// 在 app 生命週期內只建立一次 connection view model。
     @MainActor
     init() {
         _connectionViewModel = StateObject(wrappedValue: ConnectionViewModel())
@@ -30,6 +32,7 @@ struct ContentView: View {
     }
 }
 
+/// Settings 頁籤，負責 ROS 2 連線與感測功能啟用。
 private struct SettingsView: View {
     @ObservedObject var connectionViewModel: ConnectionViewModel
     @ObservedObject var cameraViewModel: CameraSensorViewModel
@@ -110,6 +113,7 @@ private struct SettingsView: View {
         }
     }
 
+    /// 將非同步連線流程橋接到 iOS Toggle。
     private var connectionToggleBinding: Binding<Bool> {
         Binding(
             get: { connectionViewModel.isConnectionEnabled },
@@ -121,6 +125,7 @@ private struct SettingsView: View {
         )
     }
 
+    /// 只更新使用者意圖；實際 ARKit session 會在 CameraView 啟動。
     private var cameraToggleBinding: Binding<Bool> {
         Binding(
             get: { cameraViewModel.isCameraEnabled },
@@ -130,6 +135,7 @@ private struct SettingsView: View {
         )
     }
 
+    /// 讓 LiDAR 狀態受相機啟用狀態與硬體支援限制。
     private var lidarToggleBinding: Binding<Bool> {
         Binding(
             get: { cameraViewModel.isLiDAREnabled },
@@ -140,6 +146,7 @@ private struct SettingsView: View {
     }
 }
 
+/// Camera 頁籤，顯示 ARKit 預覽與簡易感測狀態。
 private struct CameraView: View {
     @ObservedObject var cameraViewModel: CameraSensorViewModel
     @ObservedObject var connectionViewModel: ConnectionViewModel
@@ -155,8 +162,11 @@ private struct CameraView: View {
                                 cameraViewModel.updateStatus(status)
                             },
                             onFrameUpdate: { frame in
+                                let cameraImage = frame.cameraImage
                                 Task {
-                                    await connectionViewModel.publishCameraFrame(frame)
+                                    // 影像發送刻意由 Camera toggle 驅動：
+                                    // 啟用預覽就代表啟用相機影像串流。
+                                    await connectionViewModel.publishCameraImage(cameraImage)
                                 }
                             }
                         )
@@ -189,6 +199,7 @@ private struct CameraView: View {
     }
 }
 
+/// 顯示設備端相機與 depth 狀態的簡易浮層。
 private struct CameraStatusPanel: View {
     let status: ARKitSensorStatus
     let isLiDAREnabled: Bool
@@ -207,6 +218,10 @@ private struct CameraStatusPanel: View {
                 Text(isLiDAREnabled ? resolutionText(status.depthResolution) : "-")
             }
 
+            LabeledContent("Confidence") {
+                Text(confidenceStatusText)
+            }
+
             LabeledContent("FPS") {
                 Text(status.framesPerSecond.formatted(.number.precision(.fractionLength(1))))
             }
@@ -216,15 +231,25 @@ private struct CameraStatusPanel: View {
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
     }
 
+    /// 將可選的影像尺寸格式化為預覽浮層文字。
     private func resolutionText(_ resolution: CGSize?) -> String {
         guard let resolution else { return "-" }
         return "\(Int(resolution.width)) x \(Int(resolution.height))"
     }
 
+    /// 顯示 ARKit scene depth 是否受支援，且目前是否正在產生資料。
     private var lidarStatusText: String {
         guard isLiDAREnabled else { return "Disabled" }
         guard status.isSceneDepthSupported else { return "Unsupported" }
         return status.hasSceneDepth ? "Receiving" : "Waiting"
+    }
+
+    /// 僅在 LiDAR 啟用且受支援時，顯示 confidence map 狀態。
+    private var confidenceStatusText: String {
+        guard isLiDAREnabled else { return "Disabled" }
+        guard status.isSceneDepthSupported else { return "Unsupported" }
+        guard status.hasConfidenceMap else { return "Waiting" }
+        return resolutionText(status.confidenceResolution)
     }
 }
 

@@ -15,7 +15,10 @@
 		2A8F1DCA2C0B000200000001 /* CameraSensorViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F1DC92C0B000200000001 /* CameraSensorViewModel.swift */; };
 		2A8F1DC42C0B000200000001 /* ARKitPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F1DC32C0B000200000001 /* ARKitPreviewView.swift */; };
 		2A8F1DC62C0B000200000001 /* ARKitSensorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F1DC52C0B000200000001 /* ARKitSensorView.swift */; };
-		2A8F1DC82C0B000200000001 /* ARFrameExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F1DC72C0B000200000001 /* ARFrameExtractor.swift */; };
+		2A8F1DD22C0B000300000001 /* ARDepthFrameExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F1DD12C0B000300000001 /* ARDepthFrameExtractor.swift */; };
+		2A8F1DE62C0B000400000001 /* CameraRawFrame.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F1DE52C0B000400000001 /* CameraRawFrame.swift */; };
+		2A8F1DE22C0B000400000001 /* CameraImageFrame.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F1DE12C0B000400000001 /* CameraImageFrame.swift */; };
+		2A8F1DE42C0B000400000001 /* CameraImageProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F1DE32C0B000400000001 /* CameraImageProcessor.swift */; };
 		2A8F1D8C2C0B000100000001 /* RoboSightApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F1D8B2C0B000100000001 /* RoboSightApp.swift */; };
 		2A8F1D8E2C0B000100000001 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F1D8D2C0B000100000001 /* ContentView.swift */; };
 		2A8F1D902C0B000100000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2A8F1D8F2C0B000100000001 /* Assets.xcassets */; };
@@ -33,7 +36,10 @@
 		2A8F1DC92C0B000200000001 /* CameraSensorViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraSensorViewModel.swift; sourceTree = "<group>"; };
 		2A8F1DC32C0B000200000001 /* ARKitPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARKitPreviewView.swift; sourceTree = "<group>"; };
 		2A8F1DC52C0B000200000001 /* ARKitSensorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARKitSensorView.swift; sourceTree = "<group>"; };
-		2A8F1DC72C0B000200000001 /* ARFrameExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARFrameExtractor.swift; sourceTree = "<group>"; };
+		2A8F1DD12C0B000300000001 /* ARDepthFrameExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARDepthFrameExtractor.swift; sourceTree = "<group>"; };
+		2A8F1DE52C0B000400000001 /* CameraRawFrame.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraRawFrame.swift; sourceTree = "<group>"; };
+		2A8F1DE12C0B000400000001 /* CameraImageFrame.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraImageFrame.swift; sourceTree = "<group>"; };
+		2A8F1DE32C0B000400000001 /* CameraImageProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraImageProcessor.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -91,7 +97,9 @@
 			isa = PBXGroup;
 			children = (
 				2A8F1DC92C0B000200000001 /* CameraSensorViewModel.swift */,
+				2A8F1DE02C0B000400000001 /* Camera */,
 				2A8F1DC12C0B000200000001 /* ARKit */,
+				2A8F1DD02C0B000300000001 /* Depth */,
 			);
 			path = Sensors;
 			sourceTree = "<group>";
@@ -101,9 +109,26 @@
 			children = (
 				2A8F1DC32C0B000200000001 /* ARKitPreviewView.swift */,
 				2A8F1DC52C0B000200000001 /* ARKitSensorView.swift */,
-				2A8F1DC72C0B000200000001 /* ARFrameExtractor.swift */,
 			);
 			path = ARKit;
+			sourceTree = "<group>";
+		};
+		2A8F1DE02C0B000400000001 /* Camera */ = {
+			isa = PBXGroup;
+			children = (
+				2A8F1DE52C0B000400000001 /* CameraRawFrame.swift */,
+				2A8F1DE12C0B000400000001 /* CameraImageFrame.swift */,
+				2A8F1DE32C0B000400000001 /* CameraImageProcessor.swift */,
+			);
+			path = Camera;
+			sourceTree = "<group>";
+		};
+		2A8F1DD02C0B000300000001 /* Depth */ = {
+			isa = PBXGroup;
+			children = (
+				2A8F1DD12C0B000300000001 /* ARDepthFrameExtractor.swift */,
+			);
+			path = Depth;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -190,7 +215,10 @@
 				2A8F1DAA2C0B000100000001 /* ConnectionViewModel.swift in Sources */,
 				2A8F1DC42C0B000200000001 /* ARKitPreviewView.swift in Sources */,
 				2A8F1DC62C0B000200000001 /* ARKitSensorView.swift in Sources */,
-				2A8F1DC82C0B000200000001 /* ARFrameExtractor.swift in Sources */,
+				2A8F1DD22C0B000300000001 /* ARDepthFrameExtractor.swift in Sources */,
+				2A8F1DE62C0B000400000001 /* CameraRawFrame.swift in Sources */,
+				2A8F1DE22C0B000400000001 /* CameraImageFrame.swift in Sources */,
+				2A8F1DE42C0B000400000001 /* CameraImageProcessor.swift in Sources */,
 				2A8F1DCA2C0B000200000001 /* CameraSensorViewModel.swift in Sources */,
 				2A8F1D8C2C0B000100000001 /* RoboSightApp.swift in Sources */,
 				2A8F1D8E2C0B000100000001 /* ContentView.swift in Sources */,

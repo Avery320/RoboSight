@@ -1,7 +1,12 @@
 import Foundation
 import SwiftROS2
 
+/// 以 Zenoh 作為底層通訊的 swift-ros2 傳輸層實作。
+///
+/// 這個 actor 負責持有 ROS context、node 與發布器。
+/// 輸入端接收 RoboSight 的感測資料模型，輸出端轉成 ROS 訊息型別。
 actor SwiftROS2ZenohTransport: RobotTransport {
+    /// ROS node 與 topic 常數集中管理，方便 RViz 與 CLI 驗證。
     static let nodeName = "robosight_ios"
     static let nodeNamespace = "/"
     static let statusTopic = "robosight/status"
@@ -18,6 +23,7 @@ actor SwiftROS2ZenohTransport: RobotTransport {
     private var cameraImagePublisher: ROS2Publisher<CompressedImage>?
     private var cameraInfoPublisher: ROS2Publisher<CameraInfo>?
 
+    /// 允許測試或後續 build 注入 ROS distro 與 timeout 設定。
     init(
         distro: ROS2Distro = .jazzy,
         connectionTimeout: TimeInterval = 5.0
@@ -26,6 +32,7 @@ actor SwiftROS2ZenohTransport: RobotTransport {
         self.connectionTimeout = connectionTimeout
     }
 
+    /// 使用傳入的 Zenoh locator 建立 ROS 2 context、node 與發布器。
     func connect(routerAddress: String, domainId: Int) async throws {
         let locator = routerAddress.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !locator.isEmpty else {
@@ -44,6 +51,9 @@ actor SwiftROS2ZenohTransport: RobotTransport {
             connectionTimeout: connectionTimeout
         )
         let context = try await ROS2Context(transport: transport, distro: distro)
+
+        // 在所有發布器建立成功前，先把尚未完成的 ROS 資源維持為區域變數。
+        // 這可以避免 actor 進入半連線狀態。
         let node: ROS2Node
         let statusPublisher: ROS2Publisher<StringMsg>
         let cameraImagePublisher: ROS2Publisher<CompressedImage>
@@ -79,6 +89,7 @@ actor SwiftROS2ZenohTransport: RobotTransport {
         self.cameraInfoPublisher = cameraInfoPublisher
     }
 
+    /// 先釋放發布器，再關閉 ROS context。
     func disconnect() async {
         statusPublisher = nil
         cameraImagePublisher = nil
@@ -90,6 +101,7 @@ actor SwiftROS2ZenohTransport: RobotTransport {
         context = nil
     }
 
+    /// 發送簡單 status 字串，用於連線診斷。
     func publishStatus(_ message: String) async throws {
         guard context?.isConnected == true, let statusPublisher else {
             throw RobotTransportError.notConnected
@@ -98,12 +110,13 @@ actor SwiftROS2ZenohTransport: RobotTransport {
         try statusPublisher.publish(StringMsg(data: message))
     }
 
-    func publishCameraFrame(_ frame: ARKitSensorFrame) async throws {
+    /// 將相機影像 API 的輸出轉成 ROS `CompressedImage` 與 `CameraInfo`。
+    func publishCameraImage(_ frame: CameraImageFrame) async throws {
         guard context?.isConnected == true, let cameraImagePublisher, let cameraInfoPublisher else {
             throw RobotTransportError.notConnected
         }
 
-        let colorImage = frame.colorImage
+        let colorImage = frame.image
         guard colorImage.width > 0,
               colorImage.height > 0,
               !colorImage.data.isEmpty,
@@ -111,8 +124,9 @@ actor SwiftROS2ZenohTransport: RobotTransport {
             throw RobotTransportError.invalidCameraFrame
         }
 
+        // 影像與 camera_info 必須使用相同 timestamp / frame_id，RViz 才能正確對齊。
         let header = Header(
-            stamp: Self.rosTime(from: frame.unixTimestamp),
+            stamp: Self.rosTime(from: frame.timestamp),
             frameId: Self.cameraOpticalFrameId
         )
         let cameraInfo = CameraInfo(
@@ -139,6 +153,7 @@ actor SwiftROS2ZenohTransport: RobotTransport {
         try cameraImagePublisher.publish(image)
     }
 
+    /// 將 Unix 秒數轉成 ROS builtin time。
     private static func rosTime(from unixTimestamp: TimeInterval) -> Time {
         let seconds = floor(unixTimestamp)
         let clampedSeconds = min(max(seconds, Double(Int32.min)), Double(Int32.max))
@@ -150,6 +165,7 @@ actor SwiftROS2ZenohTransport: RobotTransport {
         )
     }
 
+    /// 將 3x3 相機內參矩陣展開成 ROS CameraInfo 使用的 3x4 projection matrix。
     private static func projectionMatrix(from cameraMatrix: [Double]) -> [Double] {
         guard cameraMatrix.count == 9 else {
             return Array(repeating: 0, count: 12)
