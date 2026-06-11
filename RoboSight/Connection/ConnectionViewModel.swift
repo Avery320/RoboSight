@@ -65,7 +65,7 @@ final class ConnectionViewModel: ObservableObject {
 
     /// 只有在成功連線後，才允許 disconnect。
     var canDisconnect: Bool {
-        state.isConnected
+        state != .disconnected && state != .disconnecting
     }
 
     /// iOS Toggle 使用的 binding adapter。
@@ -105,8 +105,7 @@ final class ConnectionViewModel: ObservableObject {
             lastStatusMessage = "Publishing heartbeat on \(statusTopic)."
             startHeartbeat()
         } catch {
-            stopHeartbeat()
-            state = .failed(error.localizedDescription)
+            await failAndDisconnect(error)
         }
     }
 
@@ -129,25 +128,28 @@ final class ConnectionViewModel: ObservableObject {
         do {
             try await transport.setJointStatesSubscriptionEnabled(isEnabled)
         } catch {
-            state = .failed(error.localizedDescription)
+            await failAndDisconnect(error)
         }
     }
 
     /// 傳輸層已連線時，發送一筆已處理的相機影像影格。
-    func publishCameraImage(_ frame: CameraImageFrame) async {
+    func publishCameraImage(_ frame: CameraImageFrame) {
         guard state.isConnected, !isPublishingCameraImage else { return }
 
         isPublishingCameraImage = true
-        defer {
-            isPublishingCameraImage = false
+        Task { [weak self] in
+            await self?.sendCameraImage(frame)
         }
+    }
+
+    private func sendCameraImage(_ frame: CameraImageFrame) async {
+        defer { isPublishingCameraImage = false }
 
         do {
             try await transport.publishCameraImage(frame)
         } catch {
             guard state.isConnected else { return }
-            stopHeartbeat()
-            state = .failed(error.localizedDescription)
+            await failAndDisconnect(error)
         }
     }
 
@@ -179,11 +181,19 @@ final class ConnectionViewModel: ObservableObject {
         do {
             let message = makeStatusMessage()
             try await transport.publishStatus(message)
-            lastStatusMessage = "Sent: \(message)"
         } catch {
-            stopHeartbeat()
-            state = .failed(error.localizedDescription)
+            await failAndDisconnect(error)
         }
+    }
+
+    /// 所有 ROS 傳輸錯誤都集中走同一條 cleanup，避免背景 task 在斷線後殘留。
+    private func failAndDisconnect(_ error: Error) async {
+        let message = error.localizedDescription
+        stopHeartbeat()
+        isPublishingCameraImage = false
+        await transport.disconnect()
+        state = .failed(message)
+        lastStatusMessage = nil
     }
 
     /// status payload 刻意保持簡單，用於早期 ROS 連線確認。

@@ -1,10 +1,18 @@
 import SwiftUI
 
+/// App 主要頁籤。用於管理長生命週期 runtime 是否應該啟動。
+private enum AppTab: Hashable {
+    case settings
+    case camera
+    case robot
+}
+
 /// SwiftUI 根畫面，包含 Settings、Camera 與 Robot 頁籤。
 struct ContentView: View {
     @StateObject private var connectionViewModel: ConnectionViewModel
     @StateObject private var cameraViewModel = CameraSensorViewModel()
     @StateObject private var robotViewModel = RobotViewModel()
+    @State private var selectedTab: AppTab = .settings
 
     /// 在 app 生命週期內只建立一次 connection view model。
     @MainActor
@@ -13,7 +21,7 @@ struct ContentView: View {
     }
 
     var body: some View {
-        TabView {
+        TabView(selection: $selectedTab) {
             SettingsView(
                 connectionViewModel: connectionViewModel,
                 cameraViewModel: cameraViewModel,
@@ -22,19 +30,26 @@ struct ContentView: View {
             .tabItem {
                 Label("Settings", systemImage: "gearshape")
             }
+            .tag(AppTab.settings)
 
             CameraView(
                 cameraViewModel: cameraViewModel,
-                connectionViewModel: connectionViewModel
+                connectionViewModel: connectionViewModel,
+                isActive: selectedTab == .camera
             )
                 .tabItem {
                     Label("Camera", systemImage: "camera.viewfinder")
                 }
+                .tag(AppTab.camera)
 
-            RobotView(robotViewModel: robotViewModel)
+            RobotView(
+                robotViewModel: robotViewModel,
+                isActive: selectedTab == .robot
+            )
                 .tabItem {
                     Label("Robot", systemImage: "cube.box")
                 }
+                .tag(AppTab.robot)
         }
         .task {
             for await jointStates in connectionViewModel.jointStatesStream {
@@ -220,11 +235,12 @@ private struct SettingsView: View {
 private struct CameraView: View {
     @ObservedObject var cameraViewModel: CameraSensorViewModel
     @ObservedObject var connectionViewModel: ConnectionViewModel
+    let isActive: Bool
 
     var body: some View {
         NavigationStack {
             Group {
-                if cameraViewModel.isCameraEnabled {
+                if cameraViewModel.isCameraEnabled && isActive {
                     ZStack(alignment: .bottom) {
                         ARKitPreviewView(
                             isLiDAREnabled: cameraViewModel.isLiDAREnabled,
@@ -233,11 +249,8 @@ private struct CameraView: View {
                             },
                             onFrameUpdate: { frame in
                                 let cameraImage = frame.cameraImage
-                                Task {
-                                    // 影像發送刻意由 Camera toggle 驅動：
-                                    // 啟用預覽就代表啟用相機影像串流。
-                                    await connectionViewModel.publishCameraImage(cameraImage)
-                                }
+                                // 影像發送刻意由 Camera toggle 與目前 Camera tab 驅動。
+                                connectionViewModel.publishCameraImage(cameraImage)
                             }
                         )
                         .ignoresSafeArea(edges: .top)
@@ -248,6 +261,19 @@ private struct CameraView: View {
                         )
                         .padding()
                     }
+                } else if cameraViewModel.isCameraEnabled {
+                    VStack(spacing: 12) {
+                        Image(systemName: "pause.circle")
+                            .font(.largeTitle)
+                            .foregroundStyle(.secondary)
+                        Text("Camera Paused")
+                            .font(.headline)
+                        Text("Camera only runs while the Camera tab is active.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding()
                 } else {
                     VStack(spacing: 12) {
                         Image(systemName: "camera.slash")

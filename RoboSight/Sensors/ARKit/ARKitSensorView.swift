@@ -169,7 +169,9 @@ final class ARKitSensorView: ARView, ARSessionDelegate {
             confidenceImage: confidenceImage
         )
 
-        onFrameUpdate?(sensorFrame)
+        DispatchQueue.main.async { [onFrameUpdate] in
+            onFrameUpdate?(sensorFrame)
+        }
         updateFPS()
 
         publishStatus(

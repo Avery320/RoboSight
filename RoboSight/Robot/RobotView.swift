@@ -3,16 +3,23 @@ import SwiftUI
 /// Robot 頁籤，顯示從 robosim_library 下載並由 RoboSight URDF 載入的機器人模型。
 struct RobotView: View {
     @ObservedObject var robotViewModel: RobotViewModel
+    let isActive: Bool
 
     var body: some View {
         NavigationStack {
             Group {
-                if let runtime = robotViewModel.runtime {
+                if let runtime = robotViewModel.runtime, isActive {
                     RobotRealityView(
                         runtime: runtime,
                         jointPositions: robotViewModel.jointPositions
                     )
                     .ignoresSafeArea(edges: .bottom)
+                } else if robotViewModel.runtime != nil {
+                    ContentUnavailableView {
+                        Label("Robot Paused", systemImage: "pause.circle")
+                    } description: {
+                        Text("Robot scene only runs while the Robot tab is active.")
+                    }
                 } else {
                     ContentUnavailableView {
                         Label("Robot", systemImage: "cube.box")
@@ -64,5 +71,5 @@ struct RobotView: View {
 
 
 #Preview {
-    RobotView(robotViewModel: RobotViewModel())
+    RobotView(robotViewModel: RobotViewModel(), isActive: true)
 }
