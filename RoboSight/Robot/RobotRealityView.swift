@@ -87,8 +87,9 @@ struct RobotRealityView: UIViewRepresentable {
             pivot.name = "robot_pivot"
             root.addChild(pivot)
 
-            // 加入平面網格與座標軸，提供模型尺度與方向參考。
+            // 加入 ROS / URDF 參考座標軸，必須與 robot model 使用相同座標轉換。
             let gridEntity = makeGridEntity()
+            gridEntity.transform = urdfToRealityKitRootTransform
             pivot.addChild(gridEntity)
 
             view.scene.addAnchor(root)
@@ -100,48 +101,48 @@ struct RobotRealityView: UIViewRepresentable {
 
         private func makeGridEntity() -> Entity {
             let grid = Entity()
-            grid.name = "world_grid"
+            grid.name = "ros_urdf_reference_frame"
             
             let lineThickness: Float = 0.002
             let gridExtent: Int = 5 // 10m x 10m 網格，從 -5 到 +5。
             let lineMaterial = SimpleMaterial(color: UIColor(white: 0.5, alpha: 1.0), isMetallic: false)
 
-            // 產生 1m 間距的網格線
+            // 產生 ROS / URDF XY 平面上的 1m 間距網格線。
             for i in -gridExtent...gridExtent {
                 let position = Float(i)
                 
-                // X 方向的線：與 X 軸平行，沿 Z 位移。
+                // X 方向的線：與 ROS / URDF X 軸平行，沿 Y 位移。
                 let xLine = ModelEntity(
                     mesh: .generateBox(size: SIMD3<Float>(Float(gridExtent * 2), lineThickness, lineThickness)),
                     materials: [lineMaterial]
                 )
-                xLine.position = SIMD3<Float>(0, 0, position)
+                xLine.position = SIMD3<Float>(0, position, 0)
                 grid.addChild(xLine)
                 
-                // Z 方向的線：與 Z 軸平行，沿 X 位移。
-                let zLine = ModelEntity(
-                    mesh: .generateBox(size: SIMD3<Float>(lineThickness, lineThickness, Float(gridExtent * 2))),
+                // Y 方向的線：與 ROS / URDF Y 軸平行，沿 X 位移。
+                let yLine = ModelEntity(
+                    mesh: .generateBox(size: SIMD3<Float>(lineThickness, Float(gridExtent * 2), lineThickness)),
                     materials: [lineMaterial]
                 )
-                zLine.position = SIMD3<Float>(position, 0, 0)
-                grid.addChild(zLine)
+                yLine.position = SIMD3<Float>(position, 0, 0)
+                grid.addChild(yLine)
             }
 
             // 中心座標軸 (比一般網格線粗，凸顯原點，長度 1m)
             let axisLength: Float = 1.0
             let axisThickness: Float = 0.006
 
-            // X 軸：紅色。
+            // ROS / URDF X 軸：紅色，forward。
             let xAxis = ModelEntity(mesh: .generateBox(size: SIMD3<Float>(axisLength, axisThickness, axisThickness)), materials: [SimpleMaterial(color: .red, isMetallic: false)])
             xAxis.position = SIMD3<Float>(axisLength / 2, 0, 0)
             grid.addChild(xAxis)
 
-            // Y 軸：綠色。
+            // ROS / URDF Y 軸：綠色，left。
             let yAxis = ModelEntity(mesh: .generateBox(size: SIMD3<Float>(axisThickness, axisLength, axisThickness)), materials: [SimpleMaterial(color: .green, isMetallic: false)])
             yAxis.position = SIMD3<Float>(0, axisLength / 2, 0)
             grid.addChild(yAxis)
 
-            // Z 軸：藍色。
+            // ROS / URDF Z 軸：藍色，up。
             let zAxis = ModelEntity(mesh: .generateBox(size: SIMD3<Float>(axisThickness, axisThickness, axisLength)), materials: [SimpleMaterial(color: .blue, isMetallic: false)])
             zAxis.position = SIMD3<Float>(0, 0, axisLength / 2)
             grid.addChild(zAxis)
