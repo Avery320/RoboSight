@@ -19,6 +19,20 @@
 		2A8F1DE62C0B000400000001 /* CameraRawFrame.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F1DE52C0B000400000001 /* CameraRawFrame.swift */; };
 		2A8F1DE22C0B000400000001 /* CameraImageFrame.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F1DE12C0B000400000001 /* CameraImageFrame.swift */; };
 		2A8F1DE42C0B000400000001 /* CameraImageProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F1DE32C0B000400000001 /* CameraImageProcessor.swift */; };
+		2A8F1E022C0B000500000001 /* RobotView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F1E012C0B000500000001 /* RobotView.swift */; };
+		2A8F1E222C0B000700000001 /* RobotLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F1E212C0B000700000001 /* RobotLibrary.swift */; };
+		2A8F1E242C0B000700000001 /* RobotViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F1E232C0B000700000001 /* RobotViewModel.swift */; };
+		2A8F1E262C0B000700000001 /* RobotRealityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F1E252C0B000700000001 /* RobotRealityView.swift */; };
+		2A8F22022C0C000100000001 /* MathUtilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F21022C0C000100000001 /* MathUtilities.swift */; };
+		2A8F22032C0C000100000001 /* Transform3D.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F21032C0C000100000001 /* Transform3D.swift */; };
+		2A8F22052C0C000100000001 /* URDFModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F21052C0C000100000001 /* URDFModel.swift */; };
+		2A8F220C2C0C000100000001 /* URDFParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F210C2C0C000100000001 /* URDFParser.swift */; };
+		2A8F22112C0C000100000001 /* STLMeshLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F21112C0C000100000001 /* STLMeshLoader.swift */; };
+		2A8F22132C0C000100000001 /* CompiledKinematics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F21132C0C000100000001 /* CompiledKinematics.swift */; };
+		2A8F22142C0C000100000001 /* ForwardKinematics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F21142C0C000100000001 /* ForwardKinematics.swift */; };
+		2A8F22152C0C000100000001 /* JointIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F21152C0C000100000001 /* JointIndex.swift */; };
+		2A8F22162C0C000100000001 /* MimicResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F21162C0C000100000001 /* MimicResolver.swift */; };
+		2A8F22192C0C000100000001 /* RobotRendering.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F21192C0C000100000001 /* RobotRendering.swift */; };
 		2A8F1D8C2C0B000100000001 /* RoboSightApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F1D8B2C0B000100000001 /* RoboSightApp.swift */; };
 		2A8F1D8E2C0B000100000001 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F1D8D2C0B000100000001 /* ContentView.swift */; };
 		2A8F1D902C0B000100000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2A8F1D8F2C0B000100000001 /* Assets.xcassets */; };
@@ -40,6 +54,21 @@
 		2A8F1DE52C0B000400000001 /* CameraRawFrame.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraRawFrame.swift; sourceTree = "<group>"; };
 		2A8F1DE12C0B000400000001 /* CameraImageFrame.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraImageFrame.swift; sourceTree = "<group>"; };
 		2A8F1DE32C0B000400000001 /* CameraImageProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraImageProcessor.swift; sourceTree = "<group>"; };
+		2A8F1E012C0B000500000001 /* RobotView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RobotView.swift; sourceTree = "<group>"; };
+		2A8F1E212C0B000700000001 /* RobotLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RobotLibrary.swift; sourceTree = "<group>"; };
+		2A8F1E232C0B000700000001 /* RobotViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RobotViewModel.swift; sourceTree = "<group>"; };
+		2A8F1E252C0B000700000001 /* RobotRealityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RobotRealityView.swift; sourceTree = "<group>"; };
+		2A8F21022C0C000100000001 /* MathUtilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MathUtilities.swift; sourceTree = "<group>"; };
+		2A8F21032C0C000100000001 /* Transform3D.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Transform3D.swift; sourceTree = "<group>"; };
+		2A8F21052C0C000100000001 /* URDFModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URDFModel.swift; sourceTree = "<group>"; };
+		2A8F210C2C0C000100000001 /* URDFParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URDFParser.swift; sourceTree = "<group>"; };
+		2A8F21112C0C000100000001 /* STLMeshLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = STLMeshLoader.swift; sourceTree = "<group>"; };
+		2A8F21132C0C000100000001 /* CompiledKinematics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompiledKinematics.swift; sourceTree = "<group>"; };
+		2A8F21142C0C000100000001 /* ForwardKinematics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForwardKinematics.swift; sourceTree = "<group>"; };
+		2A8F21152C0C000100000001 /* JointIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JointIndex.swift; sourceTree = "<group>"; };
+		2A8F21162C0C000100000001 /* MimicResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MimicResolver.swift; sourceTree = "<group>"; };
+		2A8F21192C0C000100000001 /* RobotRendering.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RobotRendering.swift; sourceTree = "<group>"; };
+		2A8F211A2C0C000100000001 /* LICENSE-URDFKit */ = {isa = PBXFileReference; lastKnownFileType = text; path = "LICENSE-URDFKit"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -77,6 +106,7 @@
 				2A8F1D8D2C0B000100000001 /* ContentView.swift */,
 				2A8F1DA12C0B000100000001 /* Connection */,
 				2A8F1DC02C0B000200000001 /* Sensors */,
+				2A8F1E002C0B000500000001 /* Robot */,
 				2A8F1D8F2C0B000100000001 /* Assets.xcassets */,
 			);
 			path = RoboSight;
@@ -129,6 +159,52 @@
 				2A8F1DD12C0B000300000001 /* ARDepthFrameExtractor.swift */,
 			);
 			path = Depth;
+			sourceTree = "<group>";
+		};
+		2A8F1E002C0B000500000001 /* Robot */ = {
+			isa = PBXGroup;
+			children = (
+				2A8F1E212C0B000700000001 /* RobotLibrary.swift */,
+				2A8F1E232C0B000700000001 /* RobotViewModel.swift */,
+				2A8F1E012C0B000500000001 /* RobotView.swift */,
+				2A8F1E252C0B000700000001 /* RobotRealityView.swift */,
+				2A8F23012C0C000100000001 /* URDF */,
+			);
+			path = Robot;
+			sourceTree = "<group>";
+		};
+		2A8F23012C0C000100000001 /* URDF */ = {
+			isa = PBXGroup;
+			children = (
+				2A8F211A2C0C000100000001 /* LICENSE-URDFKit */,
+				2A8F21052C0C000100000001 /* URDFModel.swift */,
+				2A8F21112C0C000100000001 /* STLMeshLoader.swift */,
+				2A8F210C2C0C000100000001 /* URDFParser.swift */,
+				2A8F21192C0C000100000001 /* RobotRendering.swift */,
+				2A8F23032C0C000100000001 /* Math */,
+				2A8F23072C0C000100000001 /* Kinematics */,
+			);
+			path = URDF;
+			sourceTree = "<group>";
+		};
+		2A8F23032C0C000100000001 /* Math */ = {
+			isa = PBXGroup;
+			children = (
+				2A8F21022C0C000100000001 /* MathUtilities.swift */,
+				2A8F21032C0C000100000001 /* Transform3D.swift */,
+			);
+			path = Math;
+			sourceTree = "<group>";
+		};
+		2A8F23072C0C000100000001 /* Kinematics */ = {
+			isa = PBXGroup;
+			children = (
+				2A8F21132C0C000100000001 /* CompiledKinematics.swift */,
+				2A8F21142C0C000100000001 /* ForwardKinematics.swift */,
+				2A8F21152C0C000100000001 /* JointIndex.swift */,
+				2A8F21162C0C000100000001 /* MimicResolver.swift */,
+			);
+			path = Kinematics;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -219,6 +295,20 @@
 				2A8F1DE62C0B000400000001 /* CameraRawFrame.swift in Sources */,
 				2A8F1DE22C0B000400000001 /* CameraImageFrame.swift in Sources */,
 				2A8F1DE42C0B000400000001 /* CameraImageProcessor.swift in Sources */,
+				2A8F1E222C0B000700000001 /* RobotLibrary.swift in Sources */,
+				2A8F1E242C0B000700000001 /* RobotViewModel.swift in Sources */,
+				2A8F1E022C0B000500000001 /* RobotView.swift in Sources */,
+				2A8F1E262C0B000700000001 /* RobotRealityView.swift in Sources */,
+				2A8F22022C0C000100000001 /* MathUtilities.swift in Sources */,
+				2A8F22032C0C000100000001 /* Transform3D.swift in Sources */,
+				2A8F22052C0C000100000001 /* URDFModel.swift in Sources */,
+				2A8F220C2C0C000100000001 /* URDFParser.swift in Sources */,
+				2A8F22112C0C000100000001 /* STLMeshLoader.swift in Sources */,
+				2A8F22132C0C000100000001 /* CompiledKinematics.swift in Sources */,
+				2A8F22142C0C000100000001 /* ForwardKinematics.swift in Sources */,
+				2A8F22152C0C000100000001 /* JointIndex.swift in Sources */,
+				2A8F22162C0C000100000001 /* MimicResolver.swift in Sources */,
+				2A8F22192C0C000100000001 /* RobotRendering.swift in Sources */,
 				2A8F1DCA2C0B000200000001 /* CameraSensorViewModel.swift in Sources */,
 				2A8F1D8C2C0B000100000001 /* RoboSightApp.swift in Sources */,
 				2A8F1D8E2C0B000100000001 /* ContentView.swift in Sources */,
@@ -280,7 +370,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -337,7 +427,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
@@ -366,7 +456,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = UIInterfaceOrientationPortrait;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -402,7 +492,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = UIInterfaceOrientationPortrait;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

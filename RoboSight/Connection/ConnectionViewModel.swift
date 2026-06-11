@@ -23,6 +23,11 @@ final class ConnectionViewModel: ObservableObject {
     private var heartbeatTask: Task<Void, Never>?
     private var isPublishingCameraImage = false
 
+    /// 暴露 ROS 2 關節狀態數據串流。
+    var jointStatesStream: AsyncStream<[String: Double]> {
+        transport.jointStatesStream
+    }
+
     init(
         routerHost: String = "172.20.10.5",
         routerPort: String = "7447",

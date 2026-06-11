@@ -22,14 +22,22 @@ actor SwiftROS2ZenohTransport: RobotTransport {
     private var statusPublisher: ROS2Publisher<StringMsg>?
     private var cameraImagePublisher: ROS2Publisher<CompressedImage>?
     private var cameraInfoPublisher: ROS2Publisher<CameraInfo>?
+    private var jointStatesSubscription: ROS2Subscription<JointState>?
+    private var jointStatesContinuation: AsyncStream<[String: Double]>.Continuation?
+    nonisolated let jointStatesStream: AsyncStream<[String: Double]>
 
-    /// 允許測試或後續 build 注入 ROS distro 與 timeout 設定。
     init(
         distro: ROS2Distro = .jazzy,
         connectionTimeout: TimeInterval = 5.0
     ) {
         self.distro = distro
         self.connectionTimeout = connectionTimeout
+
+        var escapeContinuation: AsyncStream<[String: Double]>.Continuation?
+        self.jointStatesStream = AsyncStream { continuation in
+            escapeContinuation = continuation
+        }
+        self.jointStatesContinuation = escapeContinuation
     }
 
     /// 使用傳入的 Zenoh locator 建立 ROS 2 context、node 與發布器。
@@ -52,12 +60,11 @@ actor SwiftROS2ZenohTransport: RobotTransport {
         )
         let context = try await ROS2Context(transport: transport, distro: distro)
 
-        // 在所有發布器建立成功前，先把尚未完成的 ROS 資源維持為區域變數。
-        // 這可以避免 actor 進入半連線狀態。
         let node: ROS2Node
         let statusPublisher: ROS2Publisher<StringMsg>
         let cameraImagePublisher: ROS2Publisher<CompressedImage>
         let cameraInfoPublisher: ROS2Publisher<CameraInfo>
+        let jointStatesSubscription: ROS2Subscription<JointState>
         do {
             node = try await context.createNode(
                 name: Self.nodeName,
@@ -78,6 +85,11 @@ actor SwiftROS2ZenohTransport: RobotTransport {
                 topic: Self.cameraInfoTopic,
                 qos: .sensorData
             )
+            jointStatesSubscription = try await node.createSubscription(
+                JointState.self,
+                topic: "joint_states",
+                qos: .sensorData
+            )
         } catch {
             await context.shutdown()
             throw error
@@ -87,6 +99,20 @@ actor SwiftROS2ZenohTransport: RobotTransport {
         self.statusPublisher = statusPublisher
         self.cameraImagePublisher = cameraImagePublisher
         self.cameraInfoPublisher = cameraInfoPublisher
+        self.jointStatesSubscription = jointStatesSubscription
+
+        // 異步監聽 joint states 訊息
+        Task { [weak self] in
+            for await msg in jointStatesSubscription.messages {
+                guard let self else { break }
+                let jointPositions = Dictionary(uniqueKeysWithValues: zip(msg.name, msg.position))
+                await self.yieldJointStates(jointPositions)
+            }
+        }
+    }
+
+    private func yieldJointStates(_ positions: [String: Double]) {
+        jointStatesContinuation?.yield(positions)
     }
 
     /// 先釋放發布器，再關閉 ROS context。
@@ -94,6 +120,7 @@ actor SwiftROS2ZenohTransport: RobotTransport {
         statusPublisher = nil
         cameraImagePublisher = nil
         cameraInfoPublisher = nil
+        jointStatesSubscription = nil
 
         if let context {
             await context.shutdown()

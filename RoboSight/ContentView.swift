@@ -1,9 +1,10 @@
 import SwiftUI
 
-/// SwiftUI 根畫面，包含 Settings 與 Camera 兩個頁籤。
+/// SwiftUI 根畫面，包含 Settings、Camera 與 Robot 頁籤。
 struct ContentView: View {
     @StateObject private var connectionViewModel: ConnectionViewModel
     @StateObject private var cameraViewModel = CameraSensorViewModel()
+    @StateObject private var robotViewModel = RobotViewModel()
 
     /// 在 app 生命週期內只建立一次 connection view model。
     @MainActor
@@ -15,7 +16,8 @@ struct ContentView: View {
         TabView {
             SettingsView(
                 connectionViewModel: connectionViewModel,
-                cameraViewModel: cameraViewModel
+                cameraViewModel: cameraViewModel,
+                robotViewModel: robotViewModel
             )
             .tabItem {
                 Label("Settings", systemImage: "gearshape")
@@ -28,6 +30,16 @@ struct ContentView: View {
                 .tabItem {
                     Label("Camera", systemImage: "camera.viewfinder")
                 }
+
+            RobotView(robotViewModel: robotViewModel)
+                .tabItem {
+                    Label("Robot", systemImage: "cube.box")
+                }
+        }
+        .task {
+            for await jointStates in connectionViewModel.jointStatesStream {
+                robotViewModel.updateJointStates(jointStates)
+            }
         }
     }
 }
@@ -36,6 +48,7 @@ struct ContentView: View {
 private struct SettingsView: View {
     @ObservedObject var connectionViewModel: ConnectionViewModel
     @ObservedObject var cameraViewModel: CameraSensorViewModel
+    @ObservedObject var robotViewModel: RobotViewModel
 
     var body: some View {
         NavigationStack {
@@ -67,8 +80,6 @@ private struct SettingsView: View {
                     }
                 } header: {
                     Text("Connection")
-                } footer: {
-                    Text("Full Address is the Zenoh locator used by swift-ros2. Simulator can use 127.0.0.1; physical devices should use the Mac or ROS Docker host LAN IP.")
                 }
 
                 Section {
@@ -108,8 +119,42 @@ private struct SettingsView: View {
                 } footer: {
                     Text("Enable Camera before switching to the Camera tab. LiDAR is available only on supported devices and runs as ARKit scene depth.")
                 }
+
+                Section {
+                    if robotViewModel.availableRobots.isEmpty && robotViewModel.isFetchingLibrary {
+                        ProgressView("Loading robot library...")
+                    } else {
+                        Picker("Model", selection: selectedRobotBinding) {
+                            Text("Select Robot").tag(RobotLibraryItem?.none)
+                            ForEach(robotViewModel.availableRobots) { robot in
+                                Text(robot.name).tag(Optional(robot))
+                            }
+                        }
+                    }
+
+                    if robotViewModel.selectionState.isLoading {
+                        ProgressView(robotViewModel.selectionState.title)
+                    }
+
+                    if let validationMessage = robotViewModel.selectionState.message {
+                        Text(validationMessage)
+                            .foregroundColor(robotViewModel.selectionState.isValid ? Color.secondary : Color.red)
+                    }
+
+                    if let errorMessage = robotViewModel.robotLoadError ?? robotViewModel.libraryFetchError {
+                        Text(errorMessage)
+                            .foregroundStyle(.red)
+                    }
+                } header: {
+                    Text("Robot")
+                } footer: {
+                    Text("Robot models are loaded from Avery320/robosim_library.")
+                }
             }
             .navigationTitle("RoboSight")
+            .task {
+                await robotViewModel.refreshRobotListIfNeeded()
+            }
         }
     }
 
@@ -141,6 +186,16 @@ private struct SettingsView: View {
             get: { cameraViewModel.isLiDAREnabled },
             set: { isEnabled in
                 cameraViewModel.setLiDAREnabled(isEnabled)
+            }
+        )
+    }
+
+    /// 將 robot picker 的 optional selection 橋接到 view model。
+    private var selectedRobotBinding: Binding<RobotLibraryItem?> {
+        Binding(
+            get: { robotViewModel.selectedRobot },
+            set: { robot in
+                robotViewModel.selectRobot(robot)
             }
         )
     }
