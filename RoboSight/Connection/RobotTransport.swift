@@ -16,6 +16,9 @@ protocol RobotTransport: Sendable {
     /// 發送一筆相機影像資料內容與對應 camera info metadata。
     func publishCameraImage(_ frame: CameraImageFrame) async throws
 
+    /// 啟用或停用 `/joint_states` 訂閱。
+    func setJointStatesSubscriptionEnabled(_ isEnabled: Bool) async throws
+
     /// 接收來自 ROS 2 的關節狀態數據串流。
     var jointStatesStream: AsyncStream<[String: Double]> { get }
 }

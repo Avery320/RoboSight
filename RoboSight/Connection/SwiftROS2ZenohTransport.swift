@@ -12,6 +12,7 @@ actor SwiftROS2ZenohTransport: RobotTransport {
     static let statusTopic = "robosight/status"
     static let cameraImageTopic = "robosight/camera/image_raw/compressed"
     static let cameraInfoTopic = "robosight/camera/camera_info"
+    static let jointStatesTopic = "joint_states"
     static let cameraOpticalFrameId = "robosight_camera_optical_frame"
     static let compressedImageFormat = "rgb8; jpeg compressed rgb8"
 
@@ -19,10 +20,13 @@ actor SwiftROS2ZenohTransport: RobotTransport {
     private let connectionTimeout: TimeInterval
 
     private var context: ROS2Context?
+    private var node: ROS2Node?
     private var statusPublisher: ROS2Publisher<StringMsg>?
     private var cameraImagePublisher: ROS2Publisher<CompressedImage>?
     private var cameraInfoPublisher: ROS2Publisher<CameraInfo>?
     private var jointStatesSubscription: ROS2Subscription<JointState>?
+    private var jointStatesSubscriptionTask: Task<Void, Never>?
+    private var isJointStatesSubscriptionEnabled = false
     private var jointStatesContinuation: AsyncStream<[String: Double]>.Continuation?
     nonisolated let jointStatesStream: AsyncStream<[String: Double]>
 
@@ -64,7 +68,6 @@ actor SwiftROS2ZenohTransport: RobotTransport {
         let statusPublisher: ROS2Publisher<StringMsg>
         let cameraImagePublisher: ROS2Publisher<CompressedImage>
         let cameraInfoPublisher: ROS2Publisher<CameraInfo>
-        let jointStatesSubscription: ROS2Subscription<JointState>
         do {
             node = try await context.createNode(
                 name: Self.nodeName,
@@ -85,29 +88,24 @@ actor SwiftROS2ZenohTransport: RobotTransport {
                 topic: Self.cameraInfoTopic,
                 qos: .sensorData
             )
-            jointStatesSubscription = try await node.createSubscription(
-                JointState.self,
-                topic: "joint_states",
-                qos: .sensorData
-            )
         } catch {
             await context.shutdown()
             throw error
         }
 
         self.context = context
+        self.node = node
         self.statusPublisher = statusPublisher
         self.cameraImagePublisher = cameraImagePublisher
         self.cameraInfoPublisher = cameraInfoPublisher
-        self.jointStatesSubscription = jointStatesSubscription
 
-        // 異步監聽 joint states 訊息
-        Task { [weak self] in
-            for await msg in jointStatesSubscription.messages {
-                guard let self else { break }
-                let jointPositions = Dictionary(uniqueKeysWithValues: zip(msg.name, msg.position))
-                await self.yieldJointStates(jointPositions)
+        do {
+            if isJointStatesSubscriptionEnabled {
+                try await startJointStatesSubscriptionIfNeeded()
             }
+        } catch {
+            await disconnect()
+            throw error
         }
     }
 
@@ -115,12 +113,60 @@ actor SwiftROS2ZenohTransport: RobotTransport {
         jointStatesContinuation?.yield(positions)
     }
 
+    /// 依照使用者設定建立或釋放 `/joint_states` subscription。
+    func setJointStatesSubscriptionEnabled(_ isEnabled: Bool) async throws {
+        isJointStatesSubscriptionEnabled = isEnabled
+        if isEnabled {
+            try await startJointStatesSubscriptionIfNeeded()
+        } else {
+            stopJointStatesSubscription()
+        }
+    }
+
+    private func startJointStatesSubscriptionIfNeeded() async throws {
+        guard jointStatesSubscription == nil else { return }
+        guard context?.isConnected == true, let node else { return }
+
+        let subscription = try await node.createSubscription(
+            JointState.self,
+            topic: Self.jointStatesTopic,
+            qos: .sensorData
+        )
+        jointStatesSubscription = subscription
+        jointStatesSubscriptionTask = Task { [weak self, subscription] in
+            for await message in subscription.messages {
+                guard let self else { break }
+                let jointPositions = Self.jointPositions(from: message)
+                await self.yieldJointStates(jointPositions)
+            }
+        }
+    }
+
+    private func stopJointStatesSubscription() {
+        jointStatesSubscriptionTask?.cancel()
+        jointStatesSubscriptionTask = nil
+        jointStatesSubscription = nil
+    }
+
+    private static func jointPositions(from message: JointState) -> [String: Double] {
+        let count = min(message.name.count, message.position.count)
+        var positions: [String: Double] = [:]
+        positions.reserveCapacity(count)
+
+        for index in 0..<count {
+            positions[message.name[index]] = message.position[index]
+        }
+
+        return positions
+    }
+
     /// 先釋放發布器，再關閉 ROS context。
     func disconnect() async {
+        stopJointStatesSubscription()
         statusPublisher = nil
         cameraImagePublisher = nil
         cameraInfoPublisher = nil
-        jointStatesSubscription = nil
+        node = nil
 
         if let context {
             await context.shutdown()

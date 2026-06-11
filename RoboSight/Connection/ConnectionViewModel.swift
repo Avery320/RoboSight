@@ -16,6 +16,9 @@ final class ConnectionViewModel: ObservableObject {
     /// Settings 表單中顯示的 ROS domain ID。
     @Published var domainId: String
 
+    /// 是否訂閱 ROS `/joint_states`。預設關閉，由使用者在 Settings 明確啟用。
+    @Published var isJointStatesSubscriptionEnabled: Bool
+
     @Published private(set) var state: ConnectionState = .disconnected
     @Published private(set) var lastStatusMessage: String?
 
@@ -32,11 +35,13 @@ final class ConnectionViewModel: ObservableObject {
         routerHost: String = "172.20.10.5",
         routerPort: String = "7447",
         domainId: String = "0",
+        isJointStatesSubscriptionEnabled: Bool = false,
         transport: any RobotTransport = SwiftROS2ZenohTransport()
     ) {
         self.routerHost = routerHost
         self.routerPort = routerPort
         self.domainId = domainId
+        self.isJointStatesSubscriptionEnabled = isJointStatesSubscriptionEnabled
         self.transport = transport
     }
 
@@ -92,6 +97,7 @@ final class ConnectionViewModel: ObservableObject {
         do {
             let routerAddress = try validatedRouterAddress()
             let domainId = try validatedDomainId()
+            try await transport.setJointStatesSubscriptionEnabled(isJointStatesSubscriptionEnabled)
             try await transport.connect(routerAddress: routerAddress, domainId: domainId)
             let message = makeStatusMessage()
             try await transport.publishStatus(message)
@@ -114,6 +120,17 @@ final class ConnectionViewModel: ObservableObject {
         await transport.disconnect()
         state = .disconnected
         lastStatusMessage = "Disconnected."
+    }
+
+    /// 控制 ROS `/joint_states` subscription。
+    func setJointStatesSubscriptionEnabled(_ isEnabled: Bool) async {
+        isJointStatesSubscriptionEnabled = isEnabled
+
+        do {
+            try await transport.setJointStatesSubscriptionEnabled(isEnabled)
+        } catch {
+            state = .failed(error.localizedDescription)
+        }
     }
 
     /// 傳輸層已連線時，發送一筆已處理的相機影像影格。

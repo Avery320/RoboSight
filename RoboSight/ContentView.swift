@@ -132,6 +132,9 @@ private struct SettingsView: View {
                         }
                     }
 
+                    Toggle("/joint_states", isOn: jointStatesSubscriptionToggleBinding)
+                        .disabled(connectionViewModel.state.isBusy)
+
                     if robotViewModel.selectionState.isLoading {
                         ProgressView(robotViewModel.selectionState.title)
                     }
@@ -196,6 +199,18 @@ private struct SettingsView: View {
             get: { robotViewModel.selectedRobot },
             set: { robot in
                 robotViewModel.selectRobot(robot)
+            }
+        )
+    }
+
+    /// 控制 ROS `/joint_states` 是否建立 subscription。
+    private var jointStatesSubscriptionToggleBinding: Binding<Bool> {
+        Binding(
+            get: { connectionViewModel.isJointStatesSubscriptionEnabled },
+            set: { isEnabled in
+                Task {
+                    await connectionViewModel.setJointStatesSubscriptionEnabled(isEnabled)
+                }
             }
         )
     }
