@@ -19,6 +19,9 @@
 		2A8F1DE62C0B000400000001 /* CameraRawFrame.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F1DE52C0B000400000001 /* CameraRawFrame.swift */; };
 		2A8F1DE22C0B000400000001 /* CameraImageFrame.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F1DE12C0B000400000001 /* CameraImageFrame.swift */; };
 		2A8F1DE42C0B000400000001 /* CameraImageProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F1DE32C0B000400000001 /* CameraImageProcessor.swift */; };
+		2A8F24022C0D000100000001 /* IMUSensorController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F24012C0D000100000001 /* IMUSensorController.swift */; };
+		2A8F24042C0D000100000001 /* IMUSensorFrame.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F24032C0D000100000001 /* IMUSensorFrame.swift */; };
+		2A8F24072C0D000100000001 /* IMUSensorViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F24062C0D000100000001 /* IMUSensorViewModel.swift */; };
 		2A8F1E022C0B000500000001 /* RobotView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F1E012C0B000500000001 /* RobotView.swift */; };
 		2A8F1E222C0B000700000001 /* RobotLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F1E212C0B000700000001 /* RobotLibrary.swift */; };
 		2A8F1E242C0B000700000001 /* RobotViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F1E232C0B000700000001 /* RobotViewModel.swift */; };
@@ -54,6 +57,10 @@
 		2A8F1DE52C0B000400000001 /* CameraRawFrame.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraRawFrame.swift; sourceTree = "<group>"; };
 		2A8F1DE12C0B000400000001 /* CameraImageFrame.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraImageFrame.swift; sourceTree = "<group>"; };
 		2A8F1DE32C0B000400000001 /* CameraImageProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraImageProcessor.swift; sourceTree = "<group>"; };
+		2A8F24012C0D000100000001 /* IMUSensorController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IMUSensorController.swift; sourceTree = "<group>"; };
+		2A8F24032C0D000100000001 /* IMUSensorFrame.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IMUSensorFrame.swift; sourceTree = "<group>"; };
+		2A8F24052C0D000100000001 /* LICENSE-PyojinKim-CoreLocationMotion-Data-Logger.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "LICENSE-PyojinKim-CoreLocationMotion-Data-Logger.txt"; sourceTree = "<group>"; };
+		2A8F24062C0D000100000001 /* IMUSensorViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IMUSensorViewModel.swift; sourceTree = "<group>"; };
 		2A8F1E012C0B000500000001 /* RobotView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RobotView.swift; sourceTree = "<group>"; };
 		2A8F1E212C0B000700000001 /* RobotLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RobotLibrary.swift; sourceTree = "<group>"; };
 		2A8F1E232C0B000700000001 /* RobotViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RobotViewModel.swift; sourceTree = "<group>"; };
@@ -130,6 +137,7 @@
 				2A8F1DE02C0B000400000001 /* Camera */,
 				2A8F1DC12C0B000200000001 /* ARKit */,
 				2A8F1DD02C0B000300000001 /* Depth */,
+				2A8F24002C0D000100000001 /* IMU */,
 			);
 			path = Sensors;
 			sourceTree = "<group>";
@@ -159,6 +167,17 @@
 				2A8F1DD12C0B000300000001 /* ARDepthFrameExtractor.swift */,
 			);
 			path = Depth;
+			sourceTree = "<group>";
+		};
+		2A8F24002C0D000100000001 /* IMU */ = {
+			isa = PBXGroup;
+			children = (
+					2A8F24052C0D000100000001 /* LICENSE-PyojinKim-CoreLocationMotion-Data-Logger.txt */,
+					2A8F24012C0D000100000001 /* IMUSensorController.swift */,
+					2A8F24032C0D000100000001 /* IMUSensorFrame.swift */,
+					2A8F24062C0D000100000001 /* IMUSensorViewModel.swift */,
+				);
+				path = IMU;
 			sourceTree = "<group>";
 		};
 		2A8F1E002C0B000500000001 /* Robot */ = {
@@ -294,8 +313,11 @@
 				2A8F1DD22C0B000300000001 /* ARDepthFrameExtractor.swift in Sources */,
 				2A8F1DE62C0B000400000001 /* CameraRawFrame.swift in Sources */,
 				2A8F1DE22C0B000400000001 /* CameraImageFrame.swift in Sources */,
-				2A8F1DE42C0B000400000001 /* CameraImageProcessor.swift in Sources */,
-				2A8F1E222C0B000700000001 /* RobotLibrary.swift in Sources */,
+					2A8F1DE42C0B000400000001 /* CameraImageProcessor.swift in Sources */,
+					2A8F24022C0D000100000001 /* IMUSensorController.swift in Sources */,
+					2A8F24042C0D000100000001 /* IMUSensorFrame.swift in Sources */,
+					2A8F24072C0D000100000001 /* IMUSensorViewModel.swift in Sources */,
+					2A8F1E222C0B000700000001 /* RobotLibrary.swift in Sources */,
 				2A8F1E242C0B000700000001 /* RobotViewModel.swift in Sources */,
 				2A8F1E022C0B000500000001 /* RobotView.swift in Sources */,
 				2A8F1E262C0B000700000001 /* RobotRealityView.swift in Sources */,

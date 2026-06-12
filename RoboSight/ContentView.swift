@@ -11,6 +11,7 @@ private enum AppTab: Hashable {
 struct ContentView: View {
     @StateObject private var connectionViewModel: ConnectionViewModel
     @StateObject private var cameraViewModel = CameraSensorViewModel()
+    @StateObject private var imuViewModel = IMUSensorViewModel()
     @StateObject private var robotViewModel = RobotViewModel()
     @State private var selectedTab: AppTab = .settings
 
@@ -25,6 +26,7 @@ struct ContentView: View {
             SettingsView(
                 connectionViewModel: connectionViewModel,
                 cameraViewModel: cameraViewModel,
+                imuViewModel: imuViewModel,
                 robotViewModel: robotViewModel
             )
             .tabItem {
@@ -56,6 +58,12 @@ struct ContentView: View {
                 robotViewModel.updateJointStates(jointStates)
             }
         }
+        .onChange(of: connectionViewModel.state) { _, state in
+            if !state.isConnected {
+                cameraViewModel.setCameraEnabled(false)
+                imuViewModel.stopPublishing()
+            }
+        }
     }
 }
 
@@ -63,6 +71,7 @@ struct ContentView: View {
 private struct SettingsView: View {
     @ObservedObject var connectionViewModel: ConnectionViewModel
     @ObservedObject var cameraViewModel: CameraSensorViewModel
+    @ObservedObject var imuViewModel: IMUSensorViewModel
     @ObservedObject var robotViewModel: RobotViewModel
 
     var body: some View {
@@ -125,14 +134,21 @@ private struct SettingsView: View {
                 }
 
                 Section {
+                    Toggle("IMU", isOn: imuTFPublishingBinding)
+                        .disabled(!connectionViewModel.state.isConnected || !imuViewModel.isAvailable)
+
                     Toggle("Camera", isOn: cameraToggleBinding)
+                        .disabled(!connectionViewModel.state.isConnected || !imuViewModel.isAvailable)
 
                     Toggle("LiDAR", isOn: lidarToggleBinding)
-                        .disabled(!cameraViewModel.canEnableLiDAR && !cameraViewModel.isLiDAREnabled)
+                        .disabled(!connectionViewModel.state.isConnected || !imuViewModel.isAvailable || (!cameraViewModel.canEnableLiDAR && !cameraViewModel.isLiDAREnabled))
+
+                    if let message = imuViewModel.lastStatusMessage {
+                        Text(message)
+                            .foregroundStyle(.secondary)
+                    }
                 } header: {
-                    Text("Camera / LiDAR")
-                } footer: {
-                    Text("Enable Camera before switching to the Camera tab. LiDAR is available only on supported devices and runs as ARKit scene depth.")
+                    Text("Sensor")
                 }
 
                 Section {
@@ -193,6 +209,9 @@ private struct SettingsView: View {
         Binding(
             get: { cameraViewModel.isCameraEnabled },
             set: { isEnabled in
+                if isEnabled {
+                    startIMUTFPublishing()
+                }
                 cameraViewModel.setCameraEnabled(isEnabled)
             }
         )
@@ -203,9 +222,34 @@ private struct SettingsView: View {
         Binding(
             get: { cameraViewModel.isLiDAREnabled },
             set: { isEnabled in
+                if isEnabled {
+                    startIMUTFPublishing()
+                    cameraViewModel.setCameraEnabled(true)
+                }
                 cameraViewModel.setLiDAREnabled(isEnabled)
             }
         )
+    }
+
+    /// 控制是否用 IMU 姿態發布 device_link TF。
+    private var imuTFPublishingBinding: Binding<Bool> {
+        Binding(
+            get: { imuViewModel.isTFPublishingEnabled },
+            set: { isEnabled in
+                if isEnabled {
+                    startIMUTFPublishing()
+                } else {
+                    cameraViewModel.setCameraEnabled(false)
+                    imuViewModel.stopPublishing()
+                }
+            }
+        )
+    }
+
+    private func startIMUTFPublishing() {
+        imuViewModel.startPublishing { frame in
+            connectionViewModel.publishIMUTF(frame)
+        }
     }
 
     /// 將 robot picker 的 optional selection 橋接到 view model。

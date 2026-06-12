@@ -25,6 +25,7 @@ final class ConnectionViewModel: ObservableObject {
     private let transport: any RobotTransport
     private var heartbeatTask: Task<Void, Never>?
     private var isPublishingCameraImage = false
+    private var isPublishingIMUTF = false
 
     /// 暴露 ROS 2 關節狀態數據串流。
     var jointStatesStream: AsyncStream<[String: Double]> {
@@ -116,9 +117,31 @@ final class ConnectionViewModel: ObservableObject {
         state = .disconnecting
         stopHeartbeat()
         isPublishingCameraImage = false
+        isPublishingIMUTF = false
         await transport.disconnect()
         state = .disconnected
         lastStatusMessage = "Disconnected."
+    }
+
+    /// 傳輸層已連線時，發送一筆 IMU 姿態 TF。
+    func publishIMUTF(_ frame: IMUSensorFrame) {
+        guard state.isConnected, !isPublishingIMUTF else { return }
+
+        isPublishingIMUTF = true
+        Task { [weak self] in
+            await self?.sendIMUTF(frame)
+        }
+    }
+
+    private func sendIMUTF(_ frame: IMUSensorFrame) async {
+        defer { isPublishingIMUTF = false }
+
+        do {
+            try await transport.publishIMUTF(frame)
+        } catch {
+            guard state.isConnected else { return }
+            await failAndDisconnect(error)
+        }
     }
 
     /// 控制 ROS `/joint_states` subscription。
@@ -191,6 +214,7 @@ final class ConnectionViewModel: ObservableObject {
         let message = error.localizedDescription
         stopHeartbeat()
         isPublishingCameraImage = false
+        isPublishingIMUTF = false
         await transport.disconnect()
         state = .failed(message)
         lastStatusMessage = nil

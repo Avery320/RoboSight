@@ -16,6 +16,9 @@ protocol RobotTransport: Sendable {
     /// 發送一筆相機影像資料內容與對應 camera info metadata。
     func publishCameraImage(_ frame: CameraImageFrame) async throws
 
+    /// 發送一筆由 IMU 姿態建立的 `/tf`。
+    func publishIMUTF(_ frame: IMUSensorFrame) async throws
+
     /// 啟用或停用 `/joint_states` 訂閱。
     func setJointStatesSubscriptionEnabled(_ isEnabled: Bool) async throws
 

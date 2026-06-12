@@ -12,7 +12,12 @@ actor SwiftROS2ZenohTransport: RobotTransport {
     static let statusTopic = "robosight/status"
     static let cameraImageTopic = "robosight/camera/image_raw/compressed"
     static let cameraInfoTopic = "robosight/camera/camera_info"
+    static let tfTopic = "tf"
     static let jointStatesTopic = "joint_states"
+    static let worldFrameId = "world"
+    static let arucoMarkerFrameId = "aruco_marker_link"
+    static let deviceLinkFrameId = "device_link"
+    static let cameraLinkFrameId = "camera_link"
     static let cameraOpticalFrameId = "robosight_camera_optical_frame"
     static let compressedImageFormat = "rgb8; jpeg compressed rgb8"
 
@@ -24,6 +29,7 @@ actor SwiftROS2ZenohTransport: RobotTransport {
     private var statusPublisher: ROS2Publisher<StringMsg>?
     private var cameraImagePublisher: ROS2Publisher<CompressedImage>?
     private var cameraInfoPublisher: ROS2Publisher<CameraInfo>?
+    private var tfPublisher: ROS2Publisher<TFMessage>?
     private var jointStatesSubscription: ROS2Subscription<JointState>?
     private var jointStatesSubscriptionTask: Task<Void, Never>?
     private var isJointStatesSubscriptionEnabled = false
@@ -68,6 +74,7 @@ actor SwiftROS2ZenohTransport: RobotTransport {
         let statusPublisher: ROS2Publisher<StringMsg>
         let cameraImagePublisher: ROS2Publisher<CompressedImage>
         let cameraInfoPublisher: ROS2Publisher<CameraInfo>
+        let tfPublisher: ROS2Publisher<TFMessage>
         do {
             node = try await context.createNode(
                 name: Self.nodeName,
@@ -88,6 +95,10 @@ actor SwiftROS2ZenohTransport: RobotTransport {
                 topic: Self.cameraInfoTopic,
                 qos: .sensorData
             )
+            tfPublisher = try await node.createPublisher(
+                TFMessage.self,
+                topic: Self.tfTopic
+            )
         } catch {
             await context.shutdown()
             throw error
@@ -98,6 +109,7 @@ actor SwiftROS2ZenohTransport: RobotTransport {
         self.statusPublisher = statusPublisher
         self.cameraImagePublisher = cameraImagePublisher
         self.cameraInfoPublisher = cameraInfoPublisher
+        self.tfPublisher = tfPublisher
 
         do {
             if isJointStatesSubscriptionEnabled {
@@ -166,6 +178,7 @@ actor SwiftROS2ZenohTransport: RobotTransport {
         statusPublisher = nil
         cameraImagePublisher = nil
         cameraInfoPublisher = nil
+        tfPublisher = nil
         node = nil
 
         if let context {
@@ -197,9 +210,10 @@ actor SwiftROS2ZenohTransport: RobotTransport {
             throw RobotTransportError.invalidCameraFrame
         }
 
-        // 影像與 camera_info 必須使用相同 timestamp / frame_id，RViz 才能正確對齊。
+        // 影像與 camera_info 使用同一個 timestamp / frame_id，RViz 才能在時間軸上對齊。
+        let stamp = Self.rosTime(from: frame.timestamp)
         let header = Header(
-            stamp: Self.rosTime(from: frame.timestamp),
+            stamp: stamp,
             frameId: Self.cameraOpticalFrameId
         )
         let cameraInfo = CameraInfo(
@@ -226,6 +240,18 @@ actor SwiftROS2ZenohTransport: RobotTransport {
         try cameraImagePublisher.publish(image)
     }
 
+    /// 以 IMU 當下姿態建立 `aruco_marker_link -> device_link -> camera_link`。
+    ///
+    /// 第一階段只使用姿態，不使用移動；因此 device_link 固定在 marker 原點。
+    func publishIMUTF(_ frame: IMUSensorFrame) async throws {
+        guard context?.isConnected == true, let tfPublisher else {
+            throw RobotTransportError.notConnected
+        }
+
+        let stamp = Self.rosTime(from: frame.timestamp)
+        try tfPublisher.publish(Self.imuTFMessage(stamp: stamp, frame: frame))
+    }
+
     /// 將 Unix 秒數轉成 ROS builtin time。
     private static func rosTime(from unixTimestamp: TimeInterval) -> Time {
         let seconds = floor(unixTimestamp)
@@ -250,4 +276,59 @@ actor SwiftROS2ZenohTransport: RobotTransport {
             cameraMatrix[6], cameraMatrix[7], cameraMatrix[8], 0
         ]
     }
+
+    /// 產生目前唯一的 `/tf` 鏈：
+    /// `world -> aruco_marker_link -> device_link -> camera_link -> robosight_camera_optical_frame`。
+    private static func imuTFMessage(stamp: Time, frame: IMUSensorFrame) -> TFMessage {
+        let identity = Transform(
+            translation: Vector3(),
+            rotation: Quaternion(x: 0, y: 0, z: 0, w: 1)
+        )
+        let markerInWorld = Transform(
+            translation: Vector3(x: 1, y: 0, z: 0),
+            rotation: Quaternion(x: 0, y: 0, z: 0, w: 1)
+        )
+        let deviceInMarker = Transform(
+            translation: Vector3(),
+            rotation: Quaternion(
+                x: frame.orientation.x,
+                y: frame.orientation.y,
+                z: frame.orientation.z,
+                w: frame.orientation.w
+            )
+        )
+
+        // camera_link 與 device_link 暫時共用原點與姿態；
+        // optical frame 只負責符合 ROS 相機座標：+X 右、+Y 下、+Z 後鏡頭拍攝方向。
+        let cameraOpticalInCamera = Transform(
+            translation: Vector3(),
+            rotation: Quaternion(x: 1, y: 0, z: 0, w: 0)
+        )
+
+        return TFMessage(
+            transforms: [
+                TransformStamped(
+                    header: Header(stamp: stamp, frameId: Self.worldFrameId),
+                    childFrameId: Self.arucoMarkerFrameId,
+                    transform: markerInWorld
+                ),
+                TransformStamped(
+                    header: Header(stamp: stamp, frameId: Self.arucoMarkerFrameId),
+                    childFrameId: Self.deviceLinkFrameId,
+                    transform: deviceInMarker
+                ),
+                TransformStamped(
+                    header: Header(stamp: stamp, frameId: Self.deviceLinkFrameId),
+                    childFrameId: Self.cameraLinkFrameId,
+                    transform: identity
+                ),
+                TransformStamped(
+                    header: Header(stamp: stamp, frameId: Self.cameraLinkFrameId),
+                    childFrameId: Self.cameraOpticalFrameId,
+                    transform: cameraOpticalInCamera
+                )
+            ]
+        )
+    }
+
 }
