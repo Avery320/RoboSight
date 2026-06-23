@@ -7,15 +7,21 @@ RoboSight 是用於驗證 iOS 裝置作為 ROS 2 外部感測器的 App。
 
 - iOS App 連線到 ROS 2 Zenoh router
   - 發送 `/robosight/status`
+- IMU
+  - 整合至 `/tf`
 - 相機功能
   - 發送 `/robosight/camera/image_raw/compressed`
   - 發送 `/robosight/camera/camera_info`
   - 相機影像固定以直式 portrait 輸出
+- robot
+  - 載入 [robosim_library](https://github.com/Avery320/robosim_library) 機械手臂
+  - ***目前只支援 `.stl` 模型，其他模型無法成功載入***
+  - 可訂閱 `joint_states`
 
 ### RoboSight 
 | Start Page | Camera | Robot |
 |---|---|---|
-|![](assets/robosight.png) |![](assets/camera.png)| ![](assets/robot.png) |
+|![](assets/robosight.png) |![](assets/camera.png) | ![](assets/robot.png) |
 
 ### ROS integration on [roboSim](https://github.com/Avery320/robot-demo)
 ![ROS integration on roboSim](assets/ros_integration.png)
