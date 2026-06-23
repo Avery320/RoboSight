@@ -12,6 +12,9 @@ Unreleased
     - 建立 `/robosight/status` publisher。發送 `std_msgs/msg/String` 狀態訊息，內容包含 topic 名稱與目前時間。
 - 建立相機功能：
     - 使用 `sensor_msgs/msg/CompressedImag` 發送。
+- 建立 IMU 功能：
+    - 使用設備 IMU 功能整合至 `/tf` 
+    - 整合 `sensor_msgs/msg/CompressedImag` 相機視角。
 - 建立 urdf 載入：
     - 新增 "Robot" Tab 用於顯示機器人模型。
     - 訂閱 `/joint_states`。
