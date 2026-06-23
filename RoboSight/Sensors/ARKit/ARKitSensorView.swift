@@ -58,7 +58,7 @@ final class ARKitSensorView: ARView, ARSessionDelegate {
     var onStatusUpdate: ((ARKitSensorStatus) -> Void)?
     var onFrameUpdate: ((ARKitSensorFrame) -> Void)?
 
-    /// 目前相機發送頻率。這會同時節流 ROS 影像發送與本來源的狀態更新。
+    /// 目前 ARKit 感測輸出頻率。這會同時節流 ROS 影像、device_link 位移與狀態更新。
     private let targetPublishInterval: TimeInterval = 1.0 / 10.0
 
     /// 預覽來源感測輸出共用的相機影像 API 設定。

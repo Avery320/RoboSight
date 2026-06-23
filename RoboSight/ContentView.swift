@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// App 主要頁籤。用於管理長生命週期 runtime 是否應該啟動。
 private enum AppTab: Hashable {
@@ -22,36 +23,55 @@ struct ContentView: View {
     }
 
     var body: some View {
-        TabView(selection: $selectedTab) {
-            SettingsView(
-                connectionViewModel: connectionViewModel,
-                cameraViewModel: cameraViewModel,
-                imuViewModel: imuViewModel,
-                robotViewModel: robotViewModel
-            )
-            .tabItem {
-                Label("Settings", systemImage: "gearshape")
+        ZStack {
+            TabView(selection: $selectedTab) {
+                SettingsView(
+                    connectionViewModel: connectionViewModel,
+                    cameraViewModel: cameraViewModel,
+                    imuViewModel: imuViewModel,
+                    robotViewModel: robotViewModel
+                )
+                .tabItem {
+                    Label("Settings", systemImage: "gearshape")
+                }
+                .tag(AppTab.settings)
+
+                CameraView(
+                    cameraViewModel: cameraViewModel
+                )
+                    .tabItem {
+                        Label("Camera", systemImage: "camera.viewfinder")
+                    }
+                    .tag(AppTab.camera)
+
+                RobotView(
+                    robotViewModel: robotViewModel,
+                    isActive: selectedTab == .robot
+                )
+                    .tabItem {
+                        Label("Robot", systemImage: "cube.box")
+                    }
+                    .tag(AppTab.robot)
             }
-            .tag(AppTab.settings)
 
-            CameraView(
-                cameraViewModel: cameraViewModel,
-                connectionViewModel: connectionViewModel,
-                isActive: selectedTab == .camera
-            )
-                .tabItem {
-                    Label("Camera", systemImage: "camera.viewfinder")
+            // ARKit runtime 必須在根層維持生命週期；Camera tab 只顯示由 frame 產生的輔助預覽。
+            if isARKitRuntimeEnabled {
+                ARKitPreviewView(
+                    isLiDAREnabled: cameraViewModel.isLiDAREnabled,
+                    onStatusUpdate: { status in
+                        cameraViewModel.updateStatus(status)
+                    },
+                    onFrameUpdate: handleARKitFrame
+                )
+                .frame(width: 1, height: 1)
+                .opacity(0)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+                .onAppear {
+                    cameraViewModel.resetDevicePositionTracking()
+                    connectionViewModel.resetDeviceTF()
                 }
-                .tag(AppTab.camera)
-
-            RobotView(
-                robotViewModel: robotViewModel,
-                isActive: selectedTab == .robot
-            )
-                .tabItem {
-                    Label("Robot", systemImage: "cube.box")
-                }
-                .tag(AppTab.robot)
+            }
         }
         .task {
             for await jointStates in connectionViewModel.jointStatesStream {
@@ -63,6 +83,34 @@ struct ContentView: View {
                 cameraViewModel.setCameraEnabled(false)
                 imuViewModel.stopPublishing()
             }
+        }
+    }
+
+    /// Settings 的功能開關決定 ARKit runtime 是否啟動；tab 只決定是否顯示預覽。
+    private var isARKitRuntimeEnabled: Bool {
+        cameraViewModel.isCameraEnabled ||
+        cameraViewModel.isLiDAREnabled ||
+        imuViewModel.isTFPublishingEnabled
+    }
+
+    private var isCameraPreviewVisible: Bool {
+        selectedTab == .camera && cameraViewModel.isCameraEnabled
+    }
+
+    /// ARKit runtime 的 frame 統一在根層處理，再依功能 toggle 分流。
+    private func handleARKitFrame(_ frame: ARKitSensorFrame) {
+        if imuViewModel.isTFPublishingEnabled {
+            let devicePosition = cameraViewModel.makeDevicePositionFrame(
+                from: frame.rawCameraFrame
+            )
+            connectionViewModel.publishDevicePositionTF(devicePosition)
+        }
+
+        if cameraViewModel.isCameraEnabled {
+            if isCameraPreviewVisible {
+                cameraViewModel.updatePreviewImage(frame.cameraImage)
+            }
+            connectionViewModel.publishCameraImage(frame.cameraImage)
         }
     }
 }
@@ -134,7 +182,7 @@ private struct SettingsView: View {
                 }
 
                 Section {
-                    Toggle("IMU", isOn: imuTFPublishingBinding)
+                    Toggle("Device Pose", isOn: imuTFPublishingBinding)
                         .disabled(!connectionViewModel.state.isConnected || !imuViewModel.isAvailable)
 
                     Toggle("Camera", isOn: cameraToggleBinding)
@@ -204,14 +252,11 @@ private struct SettingsView: View {
         )
     }
 
-    /// 只更新使用者意圖；實際 ARKit session 會在 CameraView 啟動。
+    /// Camera toggle 控制相機影像資料流；ARKit runtime 由根層依功能開關啟動。
     private var cameraToggleBinding: Binding<Bool> {
         Binding(
             get: { cameraViewModel.isCameraEnabled },
             set: { isEnabled in
-                if isEnabled {
-                    startIMUTFPublishing()
-                }
                 cameraViewModel.setCameraEnabled(isEnabled)
             }
         )
@@ -223,7 +268,6 @@ private struct SettingsView: View {
             get: { cameraViewModel.isLiDAREnabled },
             set: { isEnabled in
                 if isEnabled {
-                    startIMUTFPublishing()
                     cameraViewModel.setCameraEnabled(true)
                 }
                 cameraViewModel.setLiDAREnabled(isEnabled)
@@ -231,15 +275,16 @@ private struct SettingsView: View {
         )
     }
 
-    /// 控制是否用 IMU 姿態發布 device_link TF。
+    /// 控制 device_link TF；旋轉來自 IMU，位移來自 ARKit VIO。
     private var imuTFPublishingBinding: Binding<Bool> {
         Binding(
             get: { imuViewModel.isTFPublishingEnabled },
             set: { isEnabled in
+                connectionViewModel.resetDeviceTF()
                 if isEnabled {
+                    cameraViewModel.resetDevicePositionTracking()
                     startIMUTFPublishing()
                 } else {
-                    cameraViewModel.setCameraEnabled(false)
                     imuViewModel.stopPublishing()
                 }
             }
@@ -248,7 +293,7 @@ private struct SettingsView: View {
 
     private func startIMUTFPublishing() {
         imuViewModel.startPublishing { frame in
-            connectionViewModel.publishIMUTF(frame)
+            connectionViewModel.publishIMUOrientationTF(frame)
         }
     }
 
@@ -275,49 +320,24 @@ private struct SettingsView: View {
     }
 }
 
-/// Camera 頁籤，顯示 ARKit 預覽與簡易感測狀態。
+/// Camera 頁籤只做輔助檢視；啟用後顯示由 ARKit runtime 產生的最新影像 frame。
 private struct CameraView: View {
     @ObservedObject var cameraViewModel: CameraSensorViewModel
-    @ObservedObject var connectionViewModel: ConnectionViewModel
-    let isActive: Bool
 
     var body: some View {
         NavigationStack {
             Group {
-                if cameraViewModel.isCameraEnabled && isActive {
-                    ZStack(alignment: .bottom) {
-                        ARKitPreviewView(
-                            isLiDAREnabled: cameraViewModel.isLiDAREnabled,
-                            onStatusUpdate: { status in
-                                cameraViewModel.updateStatus(status)
-                            },
-                            onFrameUpdate: { frame in
-                                let cameraImage = frame.cameraImage
-                                // 影像發送刻意由 Camera toggle 與目前 Camera tab 驅動。
-                                connectionViewModel.publishCameraImage(cameraImage)
-                            }
-                        )
+                if cameraViewModel.isCameraEnabled {
+                    CameraPreviewImage(image: cameraViewModel.latestPreviewImage)
                         .ignoresSafeArea(edges: .top)
-
-                        CameraStatusPanel(
-                            status: cameraViewModel.status,
-                            isLiDAREnabled: cameraViewModel.isLiDAREnabled
-                        )
-                        .padding()
-                    }
-                } else if cameraViewModel.isCameraEnabled {
-                    VStack(spacing: 12) {
-                        Image(systemName: "pause.circle")
-                            .font(.largeTitle)
-                            .foregroundStyle(.secondary)
-                        Text("Camera Paused")
-                            .font(.headline)
-                        Text("Camera only runs while the Camera tab is active.")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
-                    }
-                    .padding()
+                        .safeAreaInset(edge: .bottom, spacing: 0) {
+                            CameraStatusPanel(
+                                status: cameraViewModel.status,
+                                isLiDAREnabled: cameraViewModel.isLiDAREnabled
+                            )
+                            .padding(.horizontal)
+                            .padding(.bottom, 8)
+                        }
                 } else {
                     VStack(spacing: 12) {
                         Image(systemName: "camera.slash")
@@ -335,7 +355,30 @@ private struct CameraView: View {
             }
             .navigationTitle("Camera")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.hidden, for: .navigationBar)
         }
+    }
+}
+
+/// Camera tab 的輔助預覽。這裡顯示已處理後的 JPEG frame，不直接持有 ARKit session。
+private struct CameraPreviewImage: View {
+    let image: UIImage?
+
+    var body: some View {
+        Group {
+            if let image {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                ProgressView("Waiting for camera frame...")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color.black.opacity(0.9))
+                    .foregroundStyle(.white)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .clipped()
     }
 }
 

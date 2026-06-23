@@ -22,6 +22,8 @@
 		2A8F24022C0D000100000001 /* IMUSensorController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F24012C0D000100000001 /* IMUSensorController.swift */; };
 		2A8F24042C0D000100000001 /* IMUSensorFrame.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F24032C0D000100000001 /* IMUSensorFrame.swift */; };
 		2A8F24072C0D000100000001 /* IMUSensorViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F24062C0D000100000001 /* IMUSensorViewModel.swift */; };
+		2A8F25022C0E000100000001 /* DevicePositionFrame.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F25012C0E000100000001 /* DevicePositionFrame.swift */; };
+		2A8F25042C0E000100000001 /* ARDevicePositionTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F25032C0E000100000001 /* ARDevicePositionTracker.swift */; };
 		2A8F1E022C0B000500000001 /* RobotView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F1E012C0B000500000001 /* RobotView.swift */; };
 		2A8F1E222C0B000700000001 /* RobotLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F1E212C0B000700000001 /* RobotLibrary.swift */; };
 		2A8F1E242C0B000700000001 /* RobotViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F1E232C0B000700000001 /* RobotViewModel.swift */; };
@@ -61,6 +63,8 @@
 		2A8F24032C0D000100000001 /* IMUSensorFrame.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IMUSensorFrame.swift; sourceTree = "<group>"; };
 		2A8F24052C0D000100000001 /* LICENSE-PyojinKim-CoreLocationMotion-Data-Logger.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "LICENSE-PyojinKim-CoreLocationMotion-Data-Logger.txt"; sourceTree = "<group>"; };
 		2A8F24062C0D000100000001 /* IMUSensorViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IMUSensorViewModel.swift; sourceTree = "<group>"; };
+		2A8F25012C0E000100000001 /* DevicePositionFrame.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevicePositionFrame.swift; sourceTree = "<group>"; };
+		2A8F25032C0E000100000001 /* ARDevicePositionTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARDevicePositionTracker.swift; sourceTree = "<group>"; };
 		2A8F1E012C0B000500000001 /* RobotView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RobotView.swift; sourceTree = "<group>"; };
 		2A8F1E212C0B000700000001 /* RobotLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RobotLibrary.swift; sourceTree = "<group>"; };
 		2A8F1E232C0B000700000001 /* RobotViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RobotViewModel.swift; sourceTree = "<group>"; };
@@ -138,6 +142,7 @@
 				2A8F1DC12C0B000200000001 /* ARKit */,
 				2A8F1DD02C0B000300000001 /* Depth */,
 				2A8F24002C0D000100000001 /* IMU */,
+				2A8F25002C0E000100000001 /* DevicePose */,
 			);
 			path = Sensors;
 			sourceTree = "<group>";
@@ -178,6 +183,15 @@
 					2A8F24062C0D000100000001 /* IMUSensorViewModel.swift */,
 				);
 				path = IMU;
+			sourceTree = "<group>";
+		};
+		2A8F25002C0E000100000001 /* DevicePose */ = {
+			isa = PBXGroup;
+			children = (
+				2A8F25012C0E000100000001 /* DevicePositionFrame.swift */,
+				2A8F25032C0E000100000001 /* ARDevicePositionTracker.swift */,
+			);
+			path = DevicePose;
 			sourceTree = "<group>";
 		};
 		2A8F1E002C0B000500000001 /* Robot */ = {
@@ -317,6 +331,8 @@
 					2A8F24022C0D000100000001 /* IMUSensorController.swift in Sources */,
 					2A8F24042C0D000100000001 /* IMUSensorFrame.swift in Sources */,
 					2A8F24072C0D000100000001 /* IMUSensorViewModel.swift in Sources */,
+					2A8F25022C0E000100000001 /* DevicePositionFrame.swift in Sources */,
+					2A8F25042C0E000100000001 /* ARDevicePositionTracker.swift in Sources */,
 					2A8F1E222C0B000700000001 /* RobotLibrary.swift in Sources */,
 				2A8F1E242C0B000700000001 /* RobotViewModel.swift in Sources */,
 				2A8F1E022C0B000500000001 /* RobotView.swift in Sources */,

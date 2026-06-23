@@ -4,7 +4,7 @@ import Foundation
 /// ROS 2 連線狀態的主要 UI 協調器。
 ///
 /// 這個型別持有使用者輸入的 router 設定，並將實際網路通訊交給 `RobotTransport`。
-/// 它只接收相機影像 API 影格，不直接接收 ARKit 影格。
+/// 它只接收 RoboSight 穩定資料模型，不直接接收 ARKit 影格。
 @MainActor
 final class ConnectionViewModel: ObservableObject {
     /// Settings 表單中顯示的 router host。
@@ -25,7 +25,9 @@ final class ConnectionViewModel: ObservableObject {
     private let transport: any RobotTransport
     private var heartbeatTask: Task<Void, Never>?
     private var isPublishingCameraImage = false
-    private var isPublishingIMUTF = false
+    private var isPublishingDeviceTF = false
+    private var latestIMUFrame: IMUSensorFrame?
+    private var latestDeviceTranslation: DeviceTranslation?
 
     /// 暴露 ROS 2 關節狀態數據串流。
     var jointStatesStream: AsyncStream<[String: Double]> {
@@ -117,27 +119,57 @@ final class ConnectionViewModel: ObservableObject {
         state = .disconnecting
         stopHeartbeat()
         isPublishingCameraImage = false
-        isPublishingIMUTF = false
+        clearDeviceTFState()
         await transport.disconnect()
         state = .disconnected
         lastStatusMessage = "Disconnected."
     }
 
-    /// 傳輸層已連線時，發送一筆 IMU 姿態 TF。
-    func publishIMUTF(_ frame: IMUSensorFrame) {
-        guard state.isConnected, !isPublishingIMUTF else { return }
+    /// 接收最新 IMU 姿態，並用目前位移組成 device_link TF。
+    func publishIMUOrientationTF(_ frame: IMUSensorFrame) {
+        latestIMUFrame = frame
+        publishLatestDeviceTF(timestamp: frame.timestamp)
+    }
 
-        isPublishingIMUTF = true
+    /// 接收最新 ARKit VIO 位移，並用目前 IMU 姿態組成 device_link TF。
+    func publishDevicePositionTF(_ frame: DevicePositionFrame) {
+        latestDeviceTranslation = frame.translation
+        publishLatestDeviceTF(timestamp: frame.timestamp)
+    }
+
+    /// Device Pose 重新啟動時，清掉上一輪 device_link 位移與旋轉。
+    func resetDeviceTF() {
+        latestIMUFrame = nil
+        latestDeviceTranslation = nil
+    }
+
+    private func clearDeviceTFState() {
+        isPublishingDeviceTF = false
+        resetDeviceTF()
+    }
+
+    private func publishLatestDeviceTF(timestamp: TimeInterval) {
+        guard state.isConnected,
+              !isPublishingDeviceTF,
+              let latestIMUFrame else { return }
+
+        let deviceTFFrame = DeviceTFFrame(
+            timestamp: timestamp,
+            translation: latestDeviceTranslation ?? .zero,
+            orientation: latestIMUFrame.orientation
+        )
+
+        isPublishingDeviceTF = true
         Task { [weak self] in
-            await self?.sendIMUTF(frame)
+            await self?.sendDeviceTF(deviceTFFrame)
         }
     }
 
-    private func sendIMUTF(_ frame: IMUSensorFrame) async {
-        defer { isPublishingIMUTF = false }
+    private func sendDeviceTF(_ frame: DeviceTFFrame) async {
+        defer { isPublishingDeviceTF = false }
 
         do {
-            try await transport.publishIMUTF(frame)
+            try await transport.publishDeviceTF(frame)
         } catch {
             guard state.isConnected else { return }
             await failAndDisconnect(error)
@@ -214,7 +246,7 @@ final class ConnectionViewModel: ObservableObject {
         let message = error.localizedDescription
         stopHeartbeat()
         isPublishingCameraImage = false
-        isPublishingIMUTF = false
+        clearDeviceTFState()
         await transport.disconnect()
         state = .failed(message)
         lastStatusMessage = nil

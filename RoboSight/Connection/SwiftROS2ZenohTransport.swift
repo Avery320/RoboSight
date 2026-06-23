@@ -240,16 +240,14 @@ actor SwiftROS2ZenohTransport: RobotTransport {
         try cameraImagePublisher.publish(image)
     }
 
-    /// 以 IMU 當下姿態建立 `aruco_marker_link -> device_link -> camera_link`。
-    ///
-    /// 第一階段只使用姿態，不使用移動；因此 device_link 固定在 marker 原點。
-    func publishIMUTF(_ frame: IMUSensorFrame) async throws {
+    /// 發布 `aruco_marker_link -> device_link -> camera_link`。
+    func publishDeviceTF(_ frame: DeviceTFFrame) async throws {
         guard context?.isConnected == true, let tfPublisher else {
             throw RobotTransportError.notConnected
         }
 
         let stamp = Self.rosTime(from: frame.timestamp)
-        try tfPublisher.publish(Self.imuTFMessage(stamp: stamp, frame: frame))
+        try tfPublisher.publish(Self.deviceTFMessage(stamp: stamp, frame: frame))
     }
 
     /// 將 Unix 秒數轉成 ROS builtin time。
@@ -279,7 +277,7 @@ actor SwiftROS2ZenohTransport: RobotTransport {
 
     /// 產生目前唯一的 `/tf` 鏈：
     /// `world -> aruco_marker_link -> device_link -> camera_link -> robosight_camera_optical_frame`。
-    private static func imuTFMessage(stamp: Time, frame: IMUSensorFrame) -> TFMessage {
+    private static func deviceTFMessage(stamp: Time, frame: DeviceTFFrame) -> TFMessage {
         let identity = Transform(
             translation: Vector3(),
             rotation: Quaternion(x: 0, y: 0, z: 0, w: 1)
@@ -289,7 +287,11 @@ actor SwiftROS2ZenohTransport: RobotTransport {
             rotation: Quaternion(x: 0, y: 0, z: 0, w: 1)
         )
         let deviceInMarker = Transform(
-            translation: Vector3(),
+            translation: Vector3(
+                x: frame.translation.x,
+                y: frame.translation.y,
+                z: frame.translation.z
+            ),
             rotation: Quaternion(
                 x: frame.orientation.x,
                 y: frame.orientation.y,
