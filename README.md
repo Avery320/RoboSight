@@ -21,7 +21,7 @@ RoboSight 是用於驗證 iOS 裝置作為 ROS 2 外部感測器的 App。
 ### RoboSight 
 | Start Page | Camera | Robot |
 |---|---|---|
-|![](assets/robosight.png) |![](assets/camera.png) | ![](assets/robot.png) |
+|![](assets/robosight.PNG) |![](assets/camera.PNG) | ![](assets/robot.PNG) |
 
 ### ROS integration on [roboSim](https://github.com/Avery320/robot-demo)
 ![ROS integration on roboSim](assets/ros_integration.png)
