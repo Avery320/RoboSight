@@ -7,6 +7,7 @@ RoboSight 是用於驗證 iOS 裝置作為 ROS 2 外部感測器的 App。
 
 - iOS App 連線到 ROS 2 Zenoh router
   - 發送 `/robosight/status`
+  - 記住最後使用的 Router Address
 - IMU
   - 整合至 `/tf`
 - 相機功能

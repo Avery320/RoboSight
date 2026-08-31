@@ -8,6 +8,8 @@ import Foundation
 @MainActor
 final class ConnectionViewModel: ObservableObject {
     private static let joyPublishInterval = Duration.milliseconds(50)
+    private static let defaultRouterHost = "172.20.10.5"
+    private static let routerHostDefaultsKey = "robosight.routerHost"
 
     /// Settings 表單中顯示的 router host。
     @Published var routerHost: String
@@ -40,13 +42,15 @@ final class ConnectionViewModel: ObservableObject {
     }
 
     init(
-        routerHost: String = "172.20.10.5",
+        routerHost: String? = nil,
         routerPort: String = "7447",
         domainId: String = "0",
         isJointStatesSubscriptionEnabled: Bool = false,
         transport: any RobotTransport = SwiftROS2ZenohTransport()
     ) {
         self.routerHost = routerHost
+            ?? UserDefaults.standard.string(forKey: Self.routerHostDefaultsKey)
+            ?? Self.defaultRouterHost
         self.routerPort = routerPort
         self.domainId = domainId
         self.isJointStatesSubscriptionEnabled = isJointStatesSubscriptionEnabled
@@ -105,6 +109,10 @@ final class ConnectionViewModel: ObservableObject {
         do {
             let routerAddress = try validatedRouterAddress()
             let domainId = try validatedDomainId()
+            UserDefaults.standard.set(
+                normalizedRouterHost,
+                forKey: Self.routerHostDefaultsKey
+            )
             try await transport.setJointStatesSubscriptionEnabled(isJointStatesSubscriptionEnabled)
             try await transport.connect(routerAddress: routerAddress, domainId: domainId)
             let message = makeStatusMessage()
