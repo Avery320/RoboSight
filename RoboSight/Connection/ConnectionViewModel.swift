@@ -7,6 +7,8 @@ import Foundation
 /// 它只接收 RoboSight 穩定資料模型，不直接接收 ARKit 影格。
 @MainActor
 final class ConnectionViewModel: ObservableObject {
+    private static let joyPublishInterval = Duration.milliseconds(50)
+
     /// Settings 表單中顯示的 router host。
     @Published var routerHost: String
 
@@ -21,11 +23,14 @@ final class ConnectionViewModel: ObservableObject {
 
     @Published private(set) var state: ConnectionState = .disconnected
     @Published private(set) var lastStatusMessage: String?
+    @Published private(set) var isJoyPublishingEnabled = false
 
     private let transport: any RobotTransport
     private var heartbeatTask: Task<Void, Never>?
+    private var joyPublishingTask: Task<Void, Never>?
     private var isPublishingCameraImage = false
     private var isPublishingDeviceTF = false
+    private var latestJoyControlState = JoyControlState.neutral
     private var latestIMUFrame: IMUSensorFrame?
     private var latestDeviceTranslation: DeviceTranslation?
 
@@ -118,6 +123,11 @@ final class ConnectionViewModel: ObservableObject {
 
         state = .disconnecting
         stopHeartbeat()
+        let shouldPublishNeutral = isJoyPublishingEnabled
+        stopJoyPublishing()
+        if shouldPublishNeutral {
+            try? await transport.publishJoy(.neutral)
+        }
         isPublishingCameraImage = false
         clearDeviceTFState()
         await transport.disconnect()
@@ -141,6 +151,32 @@ final class ConnectionViewModel: ObservableObject {
     func resetDeviceTF() {
         latestIMUFrame = nil
         latestDeviceTranslation = nil
+    }
+
+    /// 啟用或停止虛擬 joystick 的 20 Hz autorepeat。
+    func setJoyPublishingEnabled(_ isEnabled: Bool) {
+        guard isEnabled != isJoyPublishingEnabled else { return }
+
+        if isEnabled {
+            guard state.isConnected else { return }
+
+            latestJoyControlState = .neutral
+            isJoyPublishingEnabled = true
+            startJoyPublishing()
+        } else {
+            let shouldPublishNeutral = state.isConnected
+            stopJoyPublishing()
+            if shouldPublishNeutral {
+                Task { [weak self] in
+                    await self?.publishNeutralJoy()
+                }
+            }
+        }
+    }
+
+    /// 只保存最新控制狀態；實際網路輸出由固定頻率 task 負責。
+    func updateJoyControlState(_ controlState: JoyControlState) {
+        latestJoyControlState = isJoyPublishingEnabled ? controlState : .neutral
     }
 
     private func clearDeviceTFState() {
@@ -208,6 +244,50 @@ final class ConnectionViewModel: ObservableObject {
         }
     }
 
+    /// 對齊 ROS joy_node 預設的 20 Hz autorepeat。
+    private func startJoyPublishing() {
+        joyPublishingTask = Task { [weak self] in
+            while !Task.isCancelled {
+                guard let self else { return }
+                await self.publishLatestJoy()
+
+                do {
+                    try await Task.sleep(for: Self.joyPublishInterval)
+                } catch {
+                    break
+                }
+            }
+        }
+    }
+
+    private func stopJoyPublishing() {
+        joyPublishingTask?.cancel()
+        joyPublishingTask = nil
+        isJoyPublishingEnabled = false
+        latestJoyControlState = .neutral
+    }
+
+    private func publishLatestJoy() async {
+        guard state.isConnected,
+              isJoyPublishingEnabled else { return }
+
+        do {
+            try await transport.publishJoy(latestJoyControlState)
+        } catch {
+            guard state.isConnected else { return }
+            await failAndDisconnect(error)
+        }
+    }
+
+    private func publishNeutralJoy() async {
+        do {
+            try await transport.publishJoy(.neutral)
+        } catch {
+            guard state.isConnected else { return }
+            await failAndDisconnect(error)
+        }
+    }
+
     /// 啟動每秒一次的 heartbeat，讓 ROS 端可以確認 app 仍保持連線。
     private func startHeartbeat() {
         stopHeartbeat()
@@ -220,7 +300,8 @@ final class ConnectionViewModel: ObservableObject {
                 }
 
                 guard !Task.isCancelled else { break }
-                await self?.publishHeartbeat()
+                guard let self else { return }
+                await self.publishHeartbeat()
             }
         }
     }
@@ -245,6 +326,7 @@ final class ConnectionViewModel: ObservableObject {
     private func failAndDisconnect(_ error: Error) async {
         let message = error.localizedDescription
         stopHeartbeat()
+        stopJoyPublishing()
         isPublishingCameraImage = false
         clearDeviceTFState()
         await transport.disconnect()

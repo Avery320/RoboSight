@@ -17,6 +17,11 @@ RoboSight 是用於驗證 iOS 裝置作為 ROS 2 外部感測器的 App。
   - 載入 [robosim_library](https://github.com/Avery320/robosim_library) 機械手臂
   - ***目前只支援 `.stl` 模型，其他模型無法成功載入***
   - 可訂閱 `joint_states`
+- Teleoperation
+  - 以 `sensor_msgs/msg/Joy` 發送 `/joy`
+  - 選擇 AMR 後，需在 Settings 明確啟動 Teleoperation 才開始發布
+  - 20 Hz autorepeat，並在放開搖桿、切換模式、App 進入背景或斷線時歸零
+  - AMR profile：`axes[0]` 左轉為正、`axes[3]` 前進為正、`buttons[0]` 為 enable
 
 ### RoboSight 
 | Start Page | Camera | Robot |
@@ -72,6 +77,9 @@ ros2 topic info /robosight/status --verbose
 ros2 topic echo /robosight/status std_msgs/msg/String
 ros2 topic hz /robosight/camera/image_raw/compressed
 ros2 topic hz /robosight/camera/camera_info
+ros2 topic info /joy --verbose
+ros2 topic echo /joy
+ros2 topic hz /joy
 ```
 
 ### Rviz2：

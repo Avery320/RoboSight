@@ -1,5 +1,21 @@
 import Foundation
 
+/// RoboSight 內部的標準化搖桿狀態，不依賴 ROS 訊息型別或特定傳輸實作。
+struct JoyControlState: Equatable, Sendable {
+    static let neutral = JoyControlState(turn: 0, forward: 0)
+
+    /// 正值代表向左轉，對應 ROS `angular.z` 的正方向。
+    let turn: Float
+
+    /// 正值代表向前移動，對應 ROS `linear.x` 的正方向。
+    let forward: Float
+
+    /// 有移動輸入時啟用 deadman button；歸零時同步釋放。
+    var isEnabled: Bool {
+        turn != 0 || forward != 0
+    }
+}
+
 /// App 功能與 ROS 2 通訊之間的傳輸層邊界。
 ///
 /// 功能層應傳入穩定的 RoboSight 資料模型，而不是 ARKit 影格型別。
@@ -18,6 +34,9 @@ protocol RobotTransport: Sendable {
 
     /// 發送一筆 device_link `/tf`。
     func publishDeviceTF(_ frame: DeviceTFFrame) async throws
+
+    /// 發送一筆標準 `sensor_msgs/msg/Joy` 狀態。
+    func publishJoy(_ state: JoyControlState) async throws
 
     /// 啟用或停用 `/joint_states` 訂閱。
     func setJointStatesSubscriptionEnabled(_ isEnabled: Bool) async throws

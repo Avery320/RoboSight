@@ -14,6 +14,8 @@ actor SwiftROS2ZenohTransport: RobotTransport {
     static let cameraInfoTopic = "robosight/camera/camera_info"
     static let tfTopic = "tf"
     static let jointStatesTopic = "joint_states"
+    static let joyTopic = "joy"
+    static let joyFrameId = "joy"
     static let worldFrameId = "world"
     static let arucoMarkerFrameId = "aruco_marker_link"
     static let deviceLinkFrameId = "device_link"
@@ -30,6 +32,7 @@ actor SwiftROS2ZenohTransport: RobotTransport {
     private var cameraImagePublisher: ROS2Publisher<CompressedImage>?
     private var cameraInfoPublisher: ROS2Publisher<CameraInfo>?
     private var tfPublisher: ROS2Publisher<TFMessage>?
+    private var joyPublisher: ROS2Publisher<Joy>?
     private var jointStatesSubscription: ROS2Subscription<JointState>?
     private var jointStatesSubscriptionTask: Task<Void, Never>?
     private var isJointStatesSubscriptionEnabled = false
@@ -75,6 +78,7 @@ actor SwiftROS2ZenohTransport: RobotTransport {
         let cameraImagePublisher: ROS2Publisher<CompressedImage>
         let cameraInfoPublisher: ROS2Publisher<CameraInfo>
         let tfPublisher: ROS2Publisher<TFMessage>
+        let joyPublisher: ROS2Publisher<Joy>
         do {
             node = try await context.createNode(
                 name: Self.nodeName,
@@ -99,6 +103,11 @@ actor SwiftROS2ZenohTransport: RobotTransport {
                 TFMessage.self,
                 topic: Self.tfTopic
             )
+            // 保持 ROS joy_node 使用的可靠 QoS 預設，讓 teleop_twist_joy 可直接訂閱。
+            joyPublisher = try await node.createPublisher(
+                Joy.self,
+                topic: Self.joyTopic
+            )
         } catch {
             await context.shutdown()
             throw error
@@ -110,6 +119,7 @@ actor SwiftROS2ZenohTransport: RobotTransport {
         self.cameraImagePublisher = cameraImagePublisher
         self.cameraInfoPublisher = cameraInfoPublisher
         self.tfPublisher = tfPublisher
+        self.joyPublisher = joyPublisher
 
         do {
             if isJointStatesSubscriptionEnabled {
@@ -179,6 +189,7 @@ actor SwiftROS2ZenohTransport: RobotTransport {
         cameraImagePublisher = nil
         cameraInfoPublisher = nil
         tfPublisher = nil
+        joyPublisher = nil
         node = nil
 
         if let context {
@@ -248,6 +259,28 @@ actor SwiftROS2ZenohTransport: RobotTransport {
 
         let stamp = Self.rosTime(from: frame.timestamp)
         try tfPublisher.publish(Self.deviceTFMessage(stamp: stamp, frame: frame))
+    }
+
+    /// 將 RoboSight 的平面控制狀態轉成標準 ROS `sensor_msgs/msg/Joy`。
+    ///
+    /// 現階段沿用既有 AMR joystick profile：
+    /// - `axes[0]`：轉向，左轉為正
+    /// - `axes[3]`：前後，前進為正
+    /// - `buttons[0]`：deadman / enable
+    func publishJoy(_ state: JoyControlState) async throws {
+        guard context?.isConnected == true, let joyPublisher else {
+            throw RobotTransportError.notConnected
+        }
+
+        let message = Joy(
+            header: Header(
+                stamp: Self.rosTime(from: Date().timeIntervalSince1970),
+                frameId: Self.joyFrameId
+            ),
+            axes: [state.turn, 0, 0, state.forward],
+            buttons: [state.isEnabled ? 1 : 0]
+        )
+        try joyPublisher.publish(message)
     }
 
     /// 將 Unix 秒數轉成 ROS builtin time。

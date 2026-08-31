@@ -9,18 +9,12 @@ enum TeleoperationMode: String, CaseIterable, Identifiable {
     var id: Self { self }
 }
 
-/// 後續對應 `sensor_msgs/Joy.axes` 的標準化平面輸入。
-struct JoystickAxes {
-    static let zero = JoystickAxes(x: 0, y: 0)
-
-    let x: Float
-    let y: Float
-}
-
 /// 管理 Start Page 與後續 Joystick Page 共用的操作模式。
 @MainActor
 final class TeleoperationViewModel: ObservableObject {
     static let joyTopic = "/joy"
+    static let joyMessageType = "sensor_msgs/msg/Joy"
+    private static let deadzone: Float = 0.05
 
     @Published var mode: TeleoperationMode = .none {
         didSet {
@@ -29,26 +23,28 @@ final class TeleoperationViewModel: ObservableObject {
             }
         }
     }
-    @Published private(set) var joystickAxes: JoystickAxes = .zero
+    @Published private(set) var joyControlState = JoyControlState.neutral
 
     var isAMREnabled: Bool {
         mode == .amr
     }
 
-    /// 接收 -1...1 的標準化畫面座標，並轉成向上為正 Y 的 Joy axes。
+    /// 接收套件提供的 -1...1 畫面座標，轉成 ROS 的前進與左轉正方向。
     func updateJoystick(normalizedPosition position: CGPoint) {
         guard isAMREnabled else {
             resetJoystick()
             return
         }
 
-        joystickAxes = JoystickAxes(
-            x: Float(position.x),
-            y: Float(-position.y)
+        let turn = -Float(position.x)
+        let forward = Float(-position.y)
+        joyControlState = JoyControlState(
+            turn: abs(turn) < Self.deadzone ? 0 : turn,
+            forward: abs(forward) < Self.deadzone ? 0 : forward
         )
     }
 
     func resetJoystick() {
-        joystickAxes = .zero
+        joyControlState = .neutral
     }
 }
