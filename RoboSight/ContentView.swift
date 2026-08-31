@@ -6,14 +6,16 @@ private enum AppTab: Hashable {
     case settings
     case camera
     case robot
+    case joystick
 }
 
-/// SwiftUI 根畫面，包含 Settings、Camera 與 Robot 頁籤。
+/// SwiftUI 根畫面，包含 Settings、Camera、Robot 與 Joystick 頁籤。
 struct ContentView: View {
     @StateObject private var connectionViewModel: ConnectionViewModel
     @StateObject private var cameraViewModel = CameraSensorViewModel()
     @StateObject private var imuViewModel = IMUSensorViewModel()
     @StateObject private var robotViewModel = RobotViewModel()
+    @StateObject private var teleoperationViewModel = TeleoperationViewModel()
     @State private var selectedTab: AppTab = .settings
 
     /// 在 app 生命週期內只建立一次 connection view model。
@@ -29,7 +31,8 @@ struct ContentView: View {
                     connectionViewModel: connectionViewModel,
                     cameraViewModel: cameraViewModel,
                     imuViewModel: imuViewModel,
-                    robotViewModel: robotViewModel
+                    robotViewModel: robotViewModel,
+                    teleoperationViewModel: teleoperationViewModel
                 )
                 .tabItem {
                     Label("Settings", systemImage: "gearshape")
@@ -52,6 +55,12 @@ struct ContentView: View {
                         Label("Robot", systemImage: "cube.box")
                     }
                     .tag(AppTab.robot)
+
+                JoystickView(teleoperationViewModel: teleoperationViewModel)
+                    .tabItem {
+                        Label("Joystick", systemImage: "circle.grid.cross")
+                    }
+                    .tag(AppTab.joystick)
             }
 
             // ARKit runtime 必須在根層維持生命週期；Camera tab 只顯示由 frame 產生的輔助預覽。
@@ -121,6 +130,7 @@ private struct SettingsView: View {
     @ObservedObject var cameraViewModel: CameraSensorViewModel
     @ObservedObject var imuViewModel: IMUSensorViewModel
     @ObservedObject var robotViewModel: RobotViewModel
+    @ObservedObject var teleoperationViewModel: TeleoperationViewModel
 
     var body: some View {
         NavigationStack {
@@ -179,6 +189,24 @@ private struct SettingsView: View {
                     }
                 } header: {
                     Text("ROS 2")
+                }
+
+                Section {
+                    Picker("Robot Type", selection: $teleoperationViewModel.mode) {
+                        ForEach(TeleoperationMode.allCases) { mode in
+                            Text(mode.rawValue).tag(mode)
+                        }
+                    }
+
+                    if teleoperationViewModel.isAMREnabled {
+                        LabeledContent("Topic") {
+                            Text(TeleoperationViewModel.joyTopic)
+                                .foregroundStyle(.secondary)
+                                .textSelection(.enabled)
+                        }
+                    }
+                } header: {
+                    Text("Teleoperation")
                 }
 
                 Section {

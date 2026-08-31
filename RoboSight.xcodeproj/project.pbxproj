@@ -40,6 +40,9 @@
 		2A8F22192C0C000100000001 /* RobotRendering.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F21192C0C000100000001 /* RobotRendering.swift */; };
 		2A8F1D8C2C0B000100000001 /* RoboSightApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F1D8B2C0B000100000001 /* RoboSightApp.swift */; };
 		2A8F1D8E2C0B000100000001 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F1D8D2C0B000100000001 /* ContentView.swift */; };
+		2A8F26042C0F000100000001 /* TeleoperationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F26022C0F000100000001 /* TeleoperationViewModel.swift */; };
+		2A8F26122C10000100000001 /* JoystickView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8F26112C10000100000001 /* JoystickView.swift */; };
+		2A8F26152C10000100000001 /* SwiftUIJoystick in Frameworks */ = {isa = PBXBuildFile; productRef = 2A8F26142C10000100000001 /* SwiftUIJoystick */; };
 		2A8F1D902C0B000100000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2A8F1D8F2C0B000100000001 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -80,6 +83,8 @@
 		2A8F21162C0C000100000001 /* MimicResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MimicResolver.swift; sourceTree = "<group>"; };
 		2A8F21192C0C000100000001 /* RobotRendering.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RobotRendering.swift; sourceTree = "<group>"; };
 		2A8F211A2C0C000100000001 /* LICENSE-URDFKit */ = {isa = PBXFileReference; lastKnownFileType = text; path = "LICENSE-URDFKit"; sourceTree = "<group>"; };
+		2A8F26022C0F000100000001 /* TeleoperationViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeleoperationViewModel.swift; sourceTree = "<group>"; };
+		2A8F26112C10000100000001 /* JoystickView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JoystickView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -88,6 +93,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				2A8F1DA02C0B000100000001 /* SwiftROS2 in Frameworks */,
+				2A8F26152C10000100000001 /* SwiftUIJoystick in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -118,6 +124,7 @@
 				2A8F1DA12C0B000100000001 /* Connection */,
 				2A8F1DC02C0B000200000001 /* Sensors */,
 				2A8F1E002C0B000500000001 /* Robot */,
+				2A8F26002C0F000100000001 /* Teleoperation */,
 				2A8F1D8F2C0B000100000001 /* Assets.xcassets */,
 			);
 			path = RoboSight;
@@ -206,6 +213,15 @@
 			path = Robot;
 			sourceTree = "<group>";
 		};
+		2A8F26002C0F000100000001 /* Teleoperation */ = {
+			isa = PBXGroup;
+			children = (
+				2A8F26022C0F000100000001 /* TeleoperationViewModel.swift */,
+				2A8F26112C10000100000001 /* JoystickView.swift */,
+			);
+			path = Teleoperation;
+			sourceTree = "<group>";
+		};
 		2A8F23012C0C000100000001 /* URDF */ = {
 			isa = PBXGroup;
 			children = (
@@ -258,6 +274,7 @@
 			name = RoboSight;
 			packageProductDependencies = (
 				2A8F1DAC2C0B000100000001 /* SwiftROS2 */,
+				2A8F26142C10000100000001 /* SwiftUIJoystick */,
 			);
 			productName = RoboSight;
 			productReference = 2A8F1D862C0B000100000001 /* RoboSight.app */;
@@ -291,6 +308,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				2A8F1DAB2C0B000100000001 /* XCRemoteSwiftPackageReference "swift-ros2" */,
+				2A8F26132C10000100000001 /* XCRemoteSwiftPackageReference "SwiftUIJoystick" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 2A8F1D872C0B000100000001 /* Products */;
@@ -350,6 +368,8 @@
 				2A8F1DCA2C0B000200000001 /* CameraSensorViewModel.swift in Sources */,
 				2A8F1D8C2C0B000100000001 /* RoboSightApp.swift in Sources */,
 				2A8F1D8E2C0B000100000001 /* ContentView.swift in Sources */,
+				2A8F26042C0F000100000001 /* TeleoperationViewModel.swift in Sources */,
+				2A8F26122C10000100000001 /* JoystickView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -579,6 +599,14 @@
 				version = 1.1.1;
 			};
 		};
+		2A8F26132C10000100000001 /* XCRemoteSwiftPackageReference "SwiftUIJoystick" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/michael94ellis/SwiftUIJoystick.git";
+			requirement = {
+				kind = exactVersion;
+				version = 1.5.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -586,6 +614,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 2A8F1DAB2C0B000100000001 /* XCRemoteSwiftPackageReference "swift-ros2" */;
 			productName = SwiftROS2;
+		};
+		2A8F26142C10000100000001 /* SwiftUIJoystick */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 2A8F26132C10000100000001 /* XCRemoteSwiftPackageReference "SwiftUIJoystick" */;
+			productName = SwiftUIJoystick;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
